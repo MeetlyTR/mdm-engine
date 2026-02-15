@@ -21,27 +21,32 @@ from plotly.subplots import make_subplots
 try:
     from mdm_engine.audit_spec import get_level_spec, decision_packet_to_flat_row, decision_packet_to_csv_row
 except ImportError:
-    def get_level_spec(level: int) -> Dict:
-        return {"label": f"L{level}", "short": "", "dashboard_badge": f"L{level}"}
-    def decision_packet_to_flat_row(packet: Dict) -> Dict:
-        inp = packet.get("input", {}); ext = packet.get("external", {}); mdm = packet.get("mdm", {})
-        return {
-            "time": packet.get("ts"), "title": inp.get("title", ""), "user": inp.get("user", ""),
-            "revid": inp.get("revid", ""), "external_decision": ext.get("decision", ""),
-            "p_damaging": ext.get("p_damaging"), "mdm_level": mdm.get("level", 0),
-            "clamp": mdm.get("soft_clamp", False), "reason": mdm.get("reason", ""),
-            "final_action": packet.get("final_action", ""), "mismatch": packet.get("mismatch", False),
-            "run_id": packet.get("run_id", ""), "latency_ms": packet.get("latency_ms"),
-        }
-    def decision_packet_to_csv_row(packet: Dict) -> Dict:
-        return decision_packet_to_flat_row(packet)
+    try:
+        from ami_engine.audit_spec import get_level_spec, decision_packet_to_flat_row, decision_packet_to_csv_row
+    except ImportError:
+        def get_level_spec(level: int) -> Dict:
+            return {"label": f"L{level}", "short": "", "dashboard_badge": f"L{level}"}
+        def decision_packet_to_flat_row(packet: Dict) -> Dict:
+            inp = packet.get("input", {}); ext = packet.get("external", {}); mdm = packet.get("mdm", {})
+            return {
+                "time": packet.get("ts"), "title": inp.get("title", ""), "user": inp.get("user", ""),
+                "revid": inp.get("revid", ""), "external_decision": ext.get("decision", ""),
+                "p_damaging": ext.get("p_damaging"), "mdm_level": mdm.get("level", 0),
+                "clamp": mdm.get("soft_clamp", False), "reason": mdm.get("reason", ""),
+                "final_action": packet.get("final_action", ""), "mismatch": packet.get("mismatch", False),
+                "run_id": packet.get("run_id", ""), "latency_ms": packet.get("latency_ms"),
+            }
+        def decision_packet_to_csv_row(packet: Dict) -> Dict:
+            return decision_packet_to_flat_row(packet)
 
 # Bilingual strings / Çift dilli metinler (tüm arayüz metinleri)
 TEXTS = {
     "en": {
         "title": "MDM",
+        "title_full": "Model Oversight Engine",
         "badge": "Live audit",
         "sidebar_data": "Data",
+        "sidebar_section": "Section",
         "start_live": "Start live stream",
         "stop_live": "Stop live stream",
         "live_running": "Live stream running",
@@ -56,25 +61,36 @@ TEXTS = {
         "tab_review": "Review Queue",
         "tab_search": "Search & Audit",
         "no_data": "No data yet. Click **Start live stream** to connect to Wikipedia EventStreams + ORES + MDM.",
-        "chart_levels": "L0 / L1 / L2 distribution",
-        "chart_events": "Decisions over time (last 50)",
-        "chart_latency": "Latency (ms) — last 50",
-        "chart_mismatch": "ORES vs AMI (mismatch matrix)",
-        "chart_pdamage_level": "p_damaging vs AMI level",
-        "chart_reason_breakdown": "Reason breakdown (L1/L2)",
-        "chart_as_norm_histogram": "as_norm histogram (calibration)",
-        "chart_drift_driver": "drift_driver distribution",
+        "chart_levels": "Decision levels (L0 auto, L1 soft clamp, L2 human review)",
+        "chart_events": "Level of last 50 decisions over time",
+        "chart_latency": "Response time per decision (ms)",
+        "chart_mismatch": "Wikipedia risk (FLAG/ALLOW) vs our level (L0/L1/L2)",
+        "chart_pdamage_level": "Risk score vs level (calibration)",
+        "chart_reason_breakdown": "Why decisions went to human review (L1/L2)",
+        "chart_as_norm_histogram": "as_norm (internal calibration)",
+        "chart_drift_driver": "Drift trigger (internal)",
         "calibration_section": "Calibration (escalation_driver, as_norm, drift_driver)",
-        "filter_mismatch": "Only mismatches (ORES≠AMI)",
+        "filter_mismatch": "Only mismatches (ORES≠MDM)",
         "detail_select": "Select a row in **Live Monitor** or **Search** to see details.",
         "review_pending": "Pending L2",
         "review_none": "No pending L2.",
+        "review_why_here": "**Why you're here:** A change was marked for human review (e.g. Wikipedia flagged it as suspicious, or our system asked for a second opinion). Your job is to look at what was changed and decide: **Approve** if it's fine, **Reject** if it's harmful or should be reverted.",
+        "review_what_to_do": "Your decision",
+        "review_approve_means": "**Approve** — The change is OK; no action needed. We will not revert it.",
+        "review_reject_means": "**Reject** — The change is harmful, vandalism, or should be reverted. We treat it as needing human or automated revert.",
+        "review_change_label": "What changed (diff)",
+        "review_diff_unavailable": "Diff not available. Open the Wikipedia link above to see the change, then Approve or Reject.",
+        "review_diff_legend": "(−) removed or changed  ·  (+) added",
+        "review_open_wiki": "Open on Wikipedia",
+        "review_edit_summary": "Edit summary",
+        "review_item_ores": "Wikipedia (ORES) flagged this edit as suspicious. We send it to you so a human can confirm: real problem (Reject) or false alarm (Approve).",
+        "review_item_mdm": "Our system asked for human review (e.g. low confidence or safety threshold). Check the change and Approve or Reject.",
         "filter_level": "Level",
         "filter_ext": "External decision",
         "filter_profile": "Config profile",
         "search_result": "Result",
         "search_sample_l0": "L0 sampling (1 per 100)",
-        "download_csv": "Download CSV (full: ORES + AMI + clamp/model)",
+        "download_csv": "Download CSV (full: ORES + MDM + clamp/model)",
         "language": "Language",
         "sample_every": "Sample every N events",
         "open_detail": "Open detail",
@@ -92,14 +108,12 @@ TEXTS = {
         "detail_signals": "Signals",
         "detail_content": "Content",
         "detail_actions": "Actions",
+        "detail_l2_resolve_in_review": "Use the **Review Queue** tab to Approve or Reject this item. (Only one set of buttons to avoid confusion.)",
         "tab_quality": "Quality",
         "quality_override_rate": "L2 override rate (Reject %)",
         "quality_category_dist": "Category distribution",
         "quality_reason_heatmap": "Reason → Override (which mdm_reason leads to Reject)",
         "quality_no_reviews": "No review log yet. Resolve L2 items (Approve/Reject) to see metrics.",
-        "theme": "Theme",
-        "theme_light": "Light",
-        "theme_dark": "Dark",
         "core_signals": "Core / Quality signals",
         "core_missing_fields": "Missing fields",
         "core_valid_candidates": "Valid candidates",
@@ -112,15 +126,64 @@ TEXTS = {
         "core_selection_reason": "Selection reason",
         "core_state_hash": "State hash",
         "core_config_hash": "Config hash",
-        "theme_caption": "Light / Dark — Dashboard compatible with both themes.",
         "engine_reason": "Engine reason",
         "evidence_status": "Evidence status",
         "compare_link": "Compare on Wikipedia",
+        "chart_guide_levels": "How many decisions were automatic (L0), soft-limited (L1), or sent to human review (L2). Use this to see if too many or too few go to review.",
+        "chart_guide_events": "How the last 50 decisions were classified. Lets you see if there are sudden spikes in human review or if the flow is stable.",
+        "chart_guide_latency": "How many milliseconds each decision took. If this goes up a lot, the system or network may be under load.",
+        "chart_guide_mismatch": "Compares Wikipedia’s risk label (FLAG = risky, ALLOW = ok) with our level. Helps you see when we agree or disagree with Wikipedia.",
+        "chart_guide_pdamage": "Technical: how risk score maps to L0/L1/L2. For tuning calibration.",
+        "chart_guide_reason": "For decisions that needed human review: which reason triggered it (e.g. low confidence, rule hit). Helps improve rules.",
+        "chart_guide_as_norm": "Distribution of as_norm (action selector soft-threshold). Helps tune AS_SOFT_THRESHOLD and diagnose L1 soft clamps.",
+        "chart_guide_drift": "How often temporal drift was driven by warmup vs mean/delta. Useful to see early or unstable drift triggers.",
+        "chart_guide_quality_cat": "How reviewers categorized L2 decisions (e.g. false positive, correct escalation). Informs policy and calibration.",
+        "chart_guide_quality_heatmap": "For each mdm_reason, how many L2 items were Approved vs Rejected. Shows which reasons lead to overrides.",
+        "advanced_calibration_expander": "Advanced: Calibration & diagnostics",
+        "advanced_calibration_details": "Details",
+        "advanced_calibration_caption": "For experts: as_norm, drift_driver, and risk-score vs level. Used to tune thresholds.",
+        "search_audit_explanation": "**Search & Audit:** Search and filter decision packets by level (L0/L1/L2), user, or title. Select a row to open it in Decision Detail. Use this to inspect past decisions or find specific edits.",
+        "metric_l2_ratio": "Human review %",
+        "info_meaning": "Meaning",
+        "info_purpose": "Why you look at it",
+        "info_example": "Example",
+        "info_levels_meaning": "This chart shows how the last 50 decisions were classified: L0 (fully automatic), L1 (system applied a soft limit but no human needed), or L2 (sent to a human for review).",
+        "info_levels_purpose": "You look at it to see whether most decisions are automatic or whether too many are going to human review. A healthy balance depends on your policy: e.g. you might want most as L0 with a small share of L2.",
+        "info_levels_example": "Example: if the pie is mostly L2, almost every decision is waiting for a human — you may want to relax thresholds or add capacity. If it’s almost all L0, the system is very permissive.",
+        "info_events_meaning": "Each point is one of the last 50 decisions; the height shows its level (0, 1, or 2). So you see the sequence of levels over time.",
+        "info_events_purpose": "You look at it to spot patterns: e.g. a sudden run of L2s, or a switch from mostly L0 to L1. It helps you see if the stream is stable or if something changed.",
+        "info_events_example": "Example: if the line is flat at 0 and then jumps to 2 for several points, a burst of edits may have triggered more human review; you can then check those events in the table.",
+        "info_latency_meaning": "This chart shows how many milliseconds the system took to produce each of the last 50 decisions. One point per decision.",
+        "info_latency_purpose": "You look at it to see if the system is fast enough. If latency grows or stays high, the service or network might be overloaded and users will wait longer.",
+        "info_latency_example": "Example: if values are usually under 500 ms and suddenly go above 2000 ms, something may be wrong (e.g. backend slow or network issue).",
+        "info_mismatch_meaning": "Wikipedia’s tool (ORES) labels each edit as ALLOW (low risk) or FLAG (needs attention). We then assign a level L0, L1, or L2. This table counts how many times each combination happened.",
+        "info_mismatch_purpose": "You look at it to see when we agree or disagree with Wikipedia. E.g. many FLAG + L0 means we often treat “risky” edits as automatic; many ALLOW + L2 means we escalate even when Wikipedia said low risk.",
+        "info_mismatch_example": "Example: if most FLAG edits are in the L2 column, we are aligning with Wikipedia. If most FLAG are L0, we might be too permissive and could tighten calibration.",
+        "info_reason_meaning": "For decisions that went to L1 or L2, the system recorded a reason (e.g. low confidence, rule triggered). This chart shows how often each reason occurred.",
+        "info_reason_purpose": "You look at it to understand why decisions need human review. That helps you improve rules or thresholds so that the right cases are escalated and others stay automatic.",
+        "info_reason_example": "Example: if ‘low_confidence’ is the top reason, you might adjust the confidence threshold or improve input quality so that fewer decisions are escalated for that reason.",
+        "info_as_norm_meaning": "as_norm is an internal signal: how clearly the best action outscored the second (action selector). Values near 0 mean the model could not pick a clear winner.",
+        "info_as_norm_purpose": "You look at it to tune AS_SOFT_THRESHOLD and to see why L1 soft clamps trigger. If as_norm is always near 0, the system often hesitates between actions.",
+        "info_as_norm_example": "Example: if the histogram is mostly in the 0.3–0.5 range, the selector is fairly decisive; if it is piled near 0, consider relaxing AS_SOFT_THRESHOLD or improving inputs.",
+        "info_drift_meaning": "Each bar is how often temporal drift was triggered by that driver: warmup (not enough history yet), mean (CUS mean high), delta (CUS change high), or none.",
+        "info_drift_purpose": "You look at it to see if drift is firing too often (e.g. always warmup) or too little. Helps set CUS_MEAN_THRESHOLD and DRIFT_MIN_HISTORY.",
+        "info_drift_example": "Example: if almost all bars are 'warmup', history might be too short; if 'mean' dominates, CUS_MEAN_THRESHOLD may be too low.",
+        "info_pdamage_meaning": "Each point is one decision: x = ORES risk score (p_damaging), y = MDM level (L0/L1/L2). Shows how risk score maps to your levels.",
+        "info_pdamage_purpose": "You look at it to check calibration: e.g. low risk scores should often be L0; high risk may be L1 or L2. If everything is L1, thresholds may need tuning.",
+        "info_pdamage_example": "Example: if points with p_damaging < 0.2 are all L1, the engine may be too cautious; consider relaxing H_MAX or confidence thresholds.",
+        "info_quality_cat_meaning": "After human review, each L2 decision can be given a category (e.g. false_positive, true_positive). This chart shows how many fall into each category.",
+        "info_quality_cat_purpose": "You look at it to see whether most L2s are false alarms or correct escalations. That informs policy and whether to relax or tighten thresholds.",
+        "info_quality_cat_example": "Example: if most are false_positive, the system may be over-escalating; if most are true_positive, escalation is doing its job.",
+        "info_quality_heatmap_meaning": "For each mdm_reason (why the item went to L2), the chart shows how many reviewers Approved vs Rejected. So you see which reasons lead to overrides.",
+        "info_quality_heatmap_purpose": "You look at it to see which escalation reasons reviewers often reject (override) vs accept. That helps you adjust rules or thresholds for those reasons.",
+        "info_quality_heatmap_example": "Example: if one reason has many Rejects, that driver may be too aggressive; consider tuning that rule or threshold.",
     },
     "tr": {
         "title": "MDM",
+        "title_full": "Model Denetim Motoru",
         "badge": "Canlı denetim",
         "sidebar_data": "Veri",
+        "sidebar_section": "Bölüm",
         "start_live": "Canlı akışı başlat",
         "stop_live": "Canlı akışı durdur",
         "live_running": "Canlı akış açık",
@@ -135,25 +198,36 @@ TEXTS = {
         "tab_review": "İnceleme Kuyruğu",
         "tab_search": "Ara & Denetle",
         "no_data": "Henüz veri yok. **Canlı akışı başlat** ile Wikipedia EventStreams + ORES + MDM bağlanır.",
-        "chart_levels": "L0 / L1 / L2 dağılımı",
-        "chart_events": "Zamana göre kararlar (son 50)",
-        "chart_latency": "Gecikme (ms) — son 50",
-        "chart_mismatch": "ORES vs AMI (uyumsuzluk matrisi)",
-        "chart_pdamage_level": "p_damaging vs AMI seviye",
-        "chart_reason_breakdown": "Gerekçe dağılımı (L1/L2)",
-        "chart_as_norm_histogram": "as_norm histogram (kalibrasyon)",
-        "chart_drift_driver": "drift_driver dağılımı",
+        "chart_levels": "Karar seviyeleri (L0 otomatik, L1 yumuşak fren, L2 insan incelemesi)",
+        "chart_events": "Son 50 kararın seviyesi (zamana göre)",
+        "chart_latency": "Her kararın yanıt süresi (ms)",
+        "chart_mismatch": "Wikipedia riski (FLAG/ALLOW) ile bizim seviyemiz (L0/L1/L2)",
+        "chart_pdamage_level": "Risk skoru vs seviye (kalibrasyon)",
+        "chart_reason_breakdown": "İnsan incelemesine giden kararların gerekçeleri (L1/L2)",
+        "chart_as_norm_histogram": "as_norm (dahili kalibrasyon)",
+        "chart_drift_driver": "Drift tetikleyici (dahili)",
         "calibration_section": "Kalibrasyon (escalation_driver, as_norm, drift_driver)",
-        "filter_mismatch": "Sadece uyumsuzlar (ORES≠AMI)",
+        "filter_mismatch": "Sadece uyumsuzlar (ORES≠MDM)",
         "detail_select": "Detay için **Canlı İzleme** veya **Ara** tablosunda bir satır seçin.",
         "review_pending": "Bekleyen L2",
         "review_none": "Bekleyen L2 yok.",
+        "review_why_here": "**Neden buradasınız?** Bir değişiklik insan incelemesine alındı (ör. Wikipedia şüpheli buldu veya sistem ikinci görüş istedi). Sizin işiniz: ne değiştiğine bakıp **Onayla** (sorun yok) veya **Red** (zararlı / geri alınsın) demek.",
+        "review_what_to_do": "Kararınız",
+        "review_approve_means": "**Onayla** — Değişiklik uygun; işlem gerekmez. Geri alınmayacak.",
+        "review_reject_means": "**Red** — Değişiklik zararlı, vandalizm veya geri alınmalı. İnsan veya otomatik geri alma gerektiği kabul edilir.",
+        "review_change_label": "Ne değişti (diff)",
+        "review_diff_unavailable": "Diff yok. Değişikliği görmek için yukarıdaki Wikipedia linkini açın, sonra Onayla veya Red deyin.",
+        "review_diff_legend": "(−) kaldırılan/değişen  ·  (+) eklenen",
+        "review_open_wiki": "Wikipedia'da aç",
+        "review_edit_summary": "Edit özeti",
+        "review_item_ores": "Wikipedia (ORES) bu düzenlemeyi şüpheli buldu. İnsan gözü onaylasın diye size gönderiyoruz: gerçekten sorun mu (Red) yoksa yanlış alarm mı (Onayla).",
+        "review_item_mdm": "Sistemimiz insan incelemesi istedi (örn. düşük güven veya güvenlik eşiği). Değişikliğe bakıp Onayla veya Red deyin.",
         "filter_level": "Seviye",
         "filter_ext": "Dış karar",
         "filter_profile": "Profil",
         "search_result": "Sonuç",
         "search_sample_l0": "L0 örnekleme (100'de 1)",
-        "download_csv": "CSV indir (tam: ORES + AMI + frenleme/model)",
+        "download_csv": "CSV indir (tam: ORES + MDM + frenleme/model)",
         "language": "Dil",
         "sample_every": "Her N olayda örnekle",
         "open_detail": "Detay aç",
@@ -171,14 +245,12 @@ TEXTS = {
         "detail_signals": "Sinyaller",
         "detail_content": "İçerik",
         "detail_actions": "Aksiyonlar",
+        "detail_l2_resolve_in_review": "Onayla/Red kararını **Review Queue** sekmesinden verin. (Tek yerde buton, karışıklık olmasın.)",
         "tab_quality": "Kalite",
         "quality_override_rate": "L2 override oranı (Red %)",
         "quality_category_dist": "Kategori dağılımı",
         "quality_reason_heatmap": "Gerekçe → Red (hangi mdm_reason Red üretiyor)",
         "quality_no_reviews": "Henüz inceleme kaydı yok. L2 kararlarını verin (Onayla/Red) metrikleri görmek için.",
-        "theme": "Tema",
-        "theme_light": "Açık",
-        "theme_dark": "Koyu",
         "core_signals": "Çekirdek / Kalite sinyalleri",
         "core_missing_fields": "Eksik alanlar",
         "core_valid_candidates": "Geçerli aday sayısı",
@@ -191,10 +263,57 @@ TEXTS = {
         "core_selection_reason": "Seçim gerekçesi",
         "core_state_hash": "State hash",
         "core_config_hash": "Config hash",
-        "theme_caption": "Açık / Koyu — Dashboard her iki temada uyumlu.",
         "engine_reason": "Motor gerekçesi",
         "evidence_status": "Kanıt durumu",
         "compare_link": "Wikipedia'da karşılaştır",
+        "chart_guide_levels": "Kaç kararın otomatik (L0), yumuşak frenli (L1) veya insan incelemesine gittiğini (L2) gösterir. İncelemeye giden oranın çok mu az mı olduğunu anlamak için kullanın.",
+        "chart_guide_events": "Son 50 kararın nasıl sınıflandığı. İnsan incelemesinde ani artış var mı, akış kararlı mı görebilirsiniz.",
+        "chart_guide_latency": "Her karar kaç milisaniye sürdü. Bu değer çok yükselirse sistem veya ağ yük altında olabilir.",
+        "chart_guide_mismatch": "Wikipedia’nın risk etiketi (FLAG = riskli, ALLOW = sorunsuz) ile bizim seviyemizi karşılaştırır. Ne zaman aynı fikirde olduğumuzu, ne zaman farklı karar verdiğimizi gösterir.",
+        "chart_guide_pdamage": "Teknik: risk skorunun L0/L1/L2’ye nasıl eşlendiği. Kalibrasyon ayarı için.",
+        "chart_guide_reason": "İnsan incelemesine giden kararlarda: hangi gerekçe tetikledi (örn. düşük güven, kural tetiklemesi). Kuralları iyileştirmek için kullanın.",
+        "chart_guide_as_norm": "as_norm (aksiyon seçici yumuşak eşik) dağılımı. AS_SOFT_THRESHOLD ayarı ve L1 yumuşak fren teşhisi için faydalıdır.",
+        "chart_guide_drift": "Zamansal drift'in ne sıklıkla warmup vs mean/delta ile tetiklendiği. Erken veya kararsız drift tetikleyicilerini görmek için kullanın.",
+        "chart_guide_quality_cat": "İnceleyicilerin L2 kararları nasıl kategorize ettiği (örn. yanlış pozitif, doğru yükseltme). Politika ve kalibrasyonu bilgilendirir.",
+        "chart_guide_quality_heatmap": "Her mdm_reason için kaç L2 öğesinin Onaylandığı / Reddedildiği. Hangi gerekçelerin override'a yol açtığını gösterir.",
+        "advanced_calibration_expander": "Gelişmiş: Kalibrasyon ve teşhis",
+        "advanced_calibration_details": "Detaylar",
+        "advanced_calibration_caption": "Uzmanlar için: as_norm, drift_driver ve risk skoru–seviye grafikleri. Eşik ayarlamada kullanılır.",
+        "search_audit_explanation": "**Ara & Denetle:** Karar paketlerini seviye (L0/L1/L2), kullanıcı veya başlığa göre arayıp filtreleyin. Bir satır seçerek Karar Detayı'nda açın. Geçmiş kararları incelemek veya belirli düzenlemeleri bulmak için kullanın.",
+        "metric_l2_ratio": "İnsan incelemesi %",
+        "info_meaning": "Anlam",
+        "info_purpose": "Görev (Neden inceliyorsun)",
+        "info_example": "Örnek",
+        "info_levels_meaning": "Bu grafik son 50 kararın nasıl sınıflandığını gösterir: L0 (tam otomatik), L1 (sistem yumuşak fren uyguladı ama insan gerekmedi), L2 (insan incelemesine gönderildi).",
+        "info_levels_purpose": "Çoğu kararın otomatik mi gittiğini yoksa çok fazlasının insan incelemesine mi gittiğini görmek için bakarsın. Sağlıklı denge politikanıza bağlıdır: örn. çoğunun L0, az bir kısmının L2 olmasını isteyebilirsiniz.",
+        "info_levels_example": "Örnek: Pasta çoğunlukla L2 ise neredeyse her karar insan bekliyor demektir — eşikleri yumuşatabilir veya inceleme kapasitesi ekleyebilirsiniz. Neredeyse hepsi L0 ise sistem çok serbest davranıyor demektir.",
+        "info_events_meaning": "Her nokta son 50 karardan biridir; yükseklik o kararın seviyesini (0, 1 veya 2) gösterir. Böylece zamana göre seviye sırasını görürsünüz.",
+        "info_events_purpose": "Örüntüleri fark etmek için bakarsınız: örn. aniden peş peşe L2’ler veya çoğunlukla L0’dan L1’e geçiş. Akışın kararlı mı yoksa bir şeyin değiştiği mi anlaşılır.",
+        "info_events_example": "Örnek: Çizgi 0’da düz gidip birkaç nokta 2’ye sıçrarsa, bir düzenleme patlaması daha fazla insan incelemesi tetiklemiş olabilir; tablodan o olayları inceleyebilirsiniz.",
+        "info_latency_meaning": "Bu grafik son 50 kararın her biri için sistemin kaç milisaniye sürdüğünü gösterir. Karar başına bir nokta.",
+        "info_latency_purpose": "Sistemin yeterince hızlı olup olmadığını görmek için bakarsınız. Gecikme artıyorsa veya sürekli yüksekse servis veya ağ yük altında olabilir, kullanıcılar daha uzun bekler.",
+        "info_latency_example": "Örnek: Değerler genelde 500 ms altındayken aniden 2000 ms üstüne çıkarsa bir sorun olabilir (örn. arka uç yavaş veya ağ problemi).",
+        "info_mismatch_meaning": "Wikipedia’nın aracı (ORES) her düzenlemeyi ALLOW (düşük risk) veya FLAG (dikkat gerekir) olarak etiketler. Biz de L0, L1 veya L2 seviyesi veriyoruz. Bu tablo her kombinasyonun kaç kez oluştuğunu sayar.",
+        "info_mismatch_purpose": "Wikipedia ile ne zaman aynı fikirde olduğumuzu, ne zaman farklı karar verdiğimizi görmek için bakarsınız. Örn. çok FLAG + L0, “riskli” düzenlemeleri sık sık otomatik geçtiğimiz anlamına gelir; çok ALLOW + L2, Wikipedia düşük risk dediğinde bile yükselttiğimiz anlamına gelir.",
+        "info_mismatch_example": "Örnek: FLAG’li düzenlemelerin çoğu L2 sütunundaysa Wikipedia ile uyumluyuz. FLAG’lerin çoğu L0’daysa fazla serbest kalıyor olabiliriz, kalibrasyonu sıkılaştırabiliriz.",
+        "info_reason_meaning": "L1 veya L2’ye giden kararlar için sistem bir gerekçe kaydetti (örn. düşük güven, kural tetiklendi). Bu grafik her gerekçenin ne sıklıkta görüldüğünü gösterir.",
+        "info_reason_purpose": "Kararların neden insan incelemesine gittiğini anlamak için bakarsınız. Böylece kuralları veya eşikleri iyileştirir, doğru vakalar yükselir, diğerleri otomatik kalır.",
+        "info_reason_example": "Örnek: En sık gerekçe ‘düşük_güven’ ise güven eşiğini ayarlayabilir veya giriş kalitesini artırarak bu nedenle yükselen karar sayısını azaltabilirsiniz.",
+        "info_as_norm_meaning": "as_norm dahili bir sinyal: en iyi aksiyonun ikinciden ne kadar net önde olduğu (aksiyon seçici). 0'a yakın değerler modelin net kazanan seçemediği anlamına gelir.",
+        "info_as_norm_purpose": "AS_SOFT_THRESHOLD ayarını ve L1 yumuşak frenin neden tetiklendiğini görmek için bakarsınız. as_norm sürekli 0'a yakınsa sistem sık sık iki aksiyon arasında kalıyor demektir.",
+        "info_as_norm_example": "Örnek: Histogram çoğunlukla 0,3–0,5 aralığındaysa seçici nispeten kararlı; 0'a yığılmışsa AS_SOFT_THRESHOLD'u gevşetmeyi veya girişleri iyileştirmeyi düşünün.",
+        "info_drift_meaning": "Her çubuk, zamansal drift'in o tetikleyiciyle (warmup, mean, delta veya none) ne sıklıkla tetiklendiğini gösterir.",
+        "info_drift_purpose": "Drift'in çok sık (örn. hep warmup) veya çok az tetiklenip tetiklenmediğini görmek için bakarsınız. CUS_MEAN_THRESHOLD ve DRIFT_MIN_HISTORY ayarına yardımcı olur.",
+        "info_drift_example": "Örnek: Neredeyse tüm çubuklar 'warmup' ise geçmiş çok kısa olabilir; 'mean' baskınsa CUS_MEAN_THRESHOLD düşük kalıyor olabilir.",
+        "info_pdamage_meaning": "Her nokta bir karar: x = ORES risk skoru (p_damaging), y = MDM seviyesi (L0/L1/L2). Risk skorunun seviyelere nasıl eşlendiğini gösterir.",
+        "info_pdamage_purpose": "Kalibrasyonu kontrol etmek için bakarsınız: düşük risk skorları çoğunlukla L0 olmalı; yüksek risk L1 veya L2. Hepsi L1 ise eşikler ayarlanmalı.",
+        "info_pdamage_example": "Örnek: p_damaging < 0,2 olan noktalar hep L1 ise motor fazla temkinli olabilir; H_MAX veya güven eşiklerini gevşetmeyi düşünün.",
+        "info_quality_cat_meaning": "İnsan incelemesinden sonra her L2 kararına bir kategori verilebilir (örn. false_positive, true_positive). Bu grafik her kategoride kaç karar olduğunu gösterir.",
+        "info_quality_cat_purpose": "L2'lerin çoğunun yanlış alarm mı yoksa doğru yükseltme mi olduğunu görmek için bakarsınız. Bu, politika ve eşikleri gevşetme/sıkılaştırma kararını bilgilendirir.",
+        "info_quality_cat_example": "Örnek: Çoğu false_positive ise sistem fazla yükseltiyor olabilir; çoğu true_positive ise yükseltme işini yapıyor demektir.",
+        "info_quality_heatmap_meaning": "Her mdm_reason (öğenin neden L2'ye gittiği) için grafik, kaç incelemenin Onayladığı / Reddettiğini gösterir. Hangi gerekçelerin override'a yol açtığını görürsünüz.",
+        "info_quality_heatmap_purpose": "Hangi yükseltme gerekçelerinin sık Red (override) veya Onay aldığını görmek için bakarsınız. Bu, o gerekçelere göre kural veya eşik ayarlamanıza yardımcı olur.",
+        "info_quality_heatmap_example": "Örnek: Bir gerekçe çok Red alıyorsa o driver fazla agresif olabilir; o kural veya eşiği gözden geçirin.",
     },
 }
 
@@ -207,13 +326,36 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    /* Light theme (default) */
-    .mdm-header { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 0 1.25rem 0; border-bottom: 1px solid rgba(0,0,0,.12); margin-bottom: 1rem; }
-    .mdm-header h1 { margin: 0; font-size: 1.5rem; font-weight: 600; color: #0f172a; }
-    .mdm-header .badge { font-size: 0.7rem; padding: 0.2rem 0.5rem; background: #0ea5e9; color: white; border-radius: 999px; font-weight: 500; }
-    /* Dark theme: başlıklar okunur kalsın */
-    [data-theme="dark"] .mdm-header h1 { color: #f1f5f9; }
-    [data-theme="dark"] .mdm-header { border-bottom-color: rgba(255,255,255,.12); }
+    /* Header: MDM (Model Oversight Engine) büyük ve net */
+    .mdm-header { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 0 1rem 0; border-bottom: 2px solid rgba(0,0,0,.15); margin-bottom: 1.25rem; flex-wrap: wrap; }
+    .mdm-title-block { display: flex; flex-direction: column; gap: 0.15rem; }
+    .mdm-header h1 { margin: 0; font-size: 2.25rem; font-weight: 700; color: #0f172a; letter-spacing: -0.02em; line-height: 1.2; }
+    .mdm-header .mdm-subtitle { font-size: 1.05rem; font-weight: 500; color: #475569; letter-spacing: 0.01em; }
+    .mdm-header .badge { font-size: 0.7rem; padding: 0.25rem 0.6rem; background: #0ea5e9; color: white; border-radius: 999px; font-weight: 500; }
+    /* Sekmeler: birbirinden ayrı, modern pill görünümü */
+    .stTabs [data-baseweb="tab-list"] { gap: 0.5rem; border-bottom: 1px solid rgba(0,0,0,.1); padding-bottom: 0; margin-bottom: 1rem; }
+    .stTabs [data-baseweb="tab"] { padding: 0.5rem 1rem; border-radius: 8px 8px 0 0; margin-right: 2px; font-weight: 500; }
+    .stTabs [data-baseweb="tab"]:first-child { margin-left: 0; }
+    /* Dark theme: header ve sekme kontrastı */
+    [data-theme="dark"] .main .block-container,
+    [data-theme="dark"] .mdm-header,
+    [data-theme="dark"] [data-testid="stMetricLabel"],
+    [data-theme="dark"] [data-testid="stMetricValue"] {
+        font-family: "Segoe UI", "SF Pro Text", system-ui, -apple-system, sans-serif;
+    }
+    [data-theme="dark"] .mdm-header h1 { color: #f8fafc; font-weight: 700; }
+    [data-theme="dark"] .mdm-header .mdm-subtitle { color: #94a3b8; }
+    [data-theme="dark"] .mdm-header { border-bottom-color: rgba(255,255,255,.2); }
+    [data-theme="dark"] .stTabs [data-baseweb="tab-list"] { border-bottom-color: rgba(255,255,255,.15); }
+    [data-theme="dark"] .stTabs [data-baseweb="tab"] { color: #94a3b8; }
+    [data-theme="dark"] .stTabs [data-baseweb="tab"]:focus, [data-theme="dark"] .stTabs [data-baseweb="tab"][aria-selected="true"] { color: #f8fafc; }
+    [data-theme="dark"] .stMarkdown p, [data-theme="dark"] .stMarkdown li, [data-theme="dark"] label[data-testid="stWidgetLabel"] {
+        color: #cbd5e1 !important;
+    }
+    [data-theme="dark"] [data-testid="stMetricLabel"] { color: #94a3b8 !important; font-weight: 500; }
+    [data-theme="dark"] [data-testid="stMetricValue"] { color: #e2e8f0 !important; font-weight: 600; font-size: 1.2rem; }
+    [data-theme="dark"] .stTabs [data-baseweb="tab"] { color: #94a3b8; }
+    [data-theme="dark"] .stTabs [data-baseweb="tab"]:focus { color: #e2e8f0; }
     /* Sidebar: hem light hem dark'ta okunaklı */
     [data-testid="stSidebar"] { background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%); }
     [data-testid="stSidebar"] .stMarkdown { color: #e2e8f0 !important; }
@@ -225,6 +367,12 @@ st.markdown("""
     /* Tema uyumu: kullanıcı Koyu seçerse ana alan koyu (Streamlit tema ile uyumlu) */
     [data-theme="dark"] .stDataFrame { background: rgba(15,23,42,.4); }
     [data-theme="dark"] .stExpander { background: rgba(15,23,42,.3); }
+    /* Grafik başlığındaki bilgi (ℹ️) ikonunu mavi yap — sadece .chart-info-header içindekiler */
+    .chart-info-header [data-testid="stExpander"] summary { color: #2563eb !important; }
+    [data-theme="dark"] .chart-info-header [data-testid="stExpander"] summary { color: #60a5fa !important; }
+    /* Sidebar radio option text kontrast */
+    [data-testid="stSidebar"] div[role="radiogroup"] label span { color: #e2e8f0 !important; opacity: 1 !important; }
+    [data-testid="stSidebar"] div[role="radiogroup"] label { opacity: 1 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -232,6 +380,28 @@ st.markdown("""
 def _t(key: str) -> str:
     lang = st.session_state.get("lang", "en")
     return TEXTS.get(lang, TEXTS["en"]).get(key, key)
+
+
+def _chart_header_with_info(title_key: str, meaning_key: str, purpose_key: str, example_key: str, expander_key: str) -> None:
+    """Grafik başlığı ve yanında tıklanabilir mavi ℹ️; tıklanınca popover (pop-up) ile Anlam, Görev, Örnek gösterir."""
+    t = _t
+    st.markdown('<div class="chart-info-header">', unsafe_allow_html=True)
+    tit, info = st.columns([6, 1])
+    with tit:
+        st.markdown(f"**{t(title_key)}**")
+    with info:
+        popover = getattr(st, "popover", None)
+        if popover:
+            with popover("ℹ️"):
+                st.markdown(f"**{t('info_meaning')}**  \n{t(meaning_key)}")
+                st.markdown(f"**{t('info_purpose')}**  \n{t(purpose_key)}")
+                st.markdown(f"**{t('info_example')}**  \n{t(example_key)}")
+        else:
+            with st.expander("ℹ️", expanded=False):
+                st.markdown(f"**{t('info_meaning')}**  \n{t(meaning_key)}")
+                st.markdown(f"**{t('info_purpose')}**  \n{t(purpose_key)}")
+                st.markdown(f"**{t('info_example')}**  \n{t(example_key)}")
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def _parse_schema_version(s: Any) -> Optional[tuple]:
@@ -315,19 +485,19 @@ def _render_quality_panel(packets: List[Dict], t: callable) -> None:
         st.caption(f"Reject: {rejects} / Approve: {len(resolved) - rejects} (n={len(resolved)})")
 
         # Kategori dağılımı
-        st.subheader(t("quality_category_dist"))
+        _chart_header_with_info("quality_category_dist", "info_quality_cat_meaning", "info_quality_cat_purpose", "info_quality_cat_example", "info_quality_cat")
         from collections import Counter
         cats = Counter(e.get("review_category") or "" for e in resolved)
         cats = {k or "(empty)": v for k, v in cats.items()}
         if cats:
             fig_cat = go.Figure(data=[go.Bar(x=list(cats.keys()), y=list(cats.values()))])
             fig_cat.update_layout(margin=dict(l=20, r=20, t=30, b=20), height=220)
-            st.plotly_chart(fig_cat, width="stretch")
+            st.plotly_chart(fig_cat, use_container_width=True)
         else:
             st.caption("—")
 
         # Reason → Override heatmap: mdm_reason vs review_decision (approve/reject)
-        st.subheader(t("quality_reason_heatmap"))
+        _chart_header_with_info("quality_reason_heatmap", "info_quality_heatmap_meaning", "info_quality_heatmap_purpose", "info_quality_heatmap_example", "info_quality_heatmap")
         reason_reject = Counter()
         reason_approve = Counter()
         for e in resolved:
@@ -343,7 +513,7 @@ def _render_quality_panel(packets: List[Dict], t: callable) -> None:
                 go.Bar(name="Reject", x=all_reasons, y=[reason_reject.get(r, 0) for r in all_reasons]),
             ])
             fig_heat.update_layout(barmode="group", margin=dict(l=20, r=20, t=30, b=120), height=280, xaxis_tickangle=-45)
-            st.plotly_chart(fig_heat, width="stretch")
+            st.plotly_chart(fig_heat, use_container_width=True)
         else:
             st.caption("—")
 
@@ -484,65 +654,53 @@ def _charts(packets: List[Dict], t: callable) -> None:
         hole=0.45,
         marker_colors=["#10b981", "#f59e0b", "#ef4444"],
     )])
-    fig_pie.update_layout(title=t("chart_levels"), height=280, margin=dict(t=40, b=20, l=20, r=20), showlegend=True)
-    # 2) Karar indeksi (son 50)
+    fig_pie.update_layout(height=280, margin=dict(t=20, b=20, l=20, r=20), showlegend=True)
     x = list(range(len(last)))
     levels = [p.get("mdm", {}).get("level", 0) for p in last]
     fig_lev = go.Figure()
     fig_lev.add_trace(go.Scatter(x=x, y=levels, mode="lines+markers", line=dict(color="#6366f1", width=2), marker=dict(size=6)))
-    fig_lev.update_layout(title=t("chart_events"), xaxis_title="Index", yaxis_title="Level", height=260, margin=dict(t=40, b=20, l=20, r=20))
+    fig_lev.update_layout(xaxis_title="Index", yaxis_title="Level", height=260, margin=dict(t=20, b=20, l=20, r=20))
     fig_lev.update_yaxes(tickvals=[0, 1, 2])
-    # 3) Gecikme (ms)
     latencies = [p.get("latency_ms") for p in last if p.get("latency_ms") is not None]
     if not latencies:
         latencies = [0] * len(last)
     fig_lat = go.Figure()
     fig_lat.add_trace(go.Scatter(x=list(range(len(latencies))), y=latencies, mode="lines+markers", line=dict(color="#ec4899", width=2), marker=dict(size=5)))
-    fig_lat.update_layout(title=t("chart_latency"), xaxis_title="Index", yaxis_title="ms", height=260, margin=dict(t=40, b=20, l=20, r=20))
+    fig_lat.update_layout(xaxis_title="Index", yaxis_title="ms", height=260, margin=dict(t=20, b=20, l=20, r=20))
     c1, c2, c3 = st.columns(3)
     with c1:
-        st.plotly_chart(fig_pie, width="stretch")
+        _chart_header_with_info("chart_levels", "info_levels_meaning", "info_levels_purpose", "info_levels_example", "info_levels")
+        st.plotly_chart(fig_pie, use_container_width=True)
     with c2:
-        st.plotly_chart(fig_lev, width="stretch")
+        _chart_header_with_info("chart_events", "info_events_meaning", "info_events_purpose", "info_events_example", "info_events")
+        st.plotly_chart(fig_lev, use_container_width=True)
     with c3:
-        st.plotly_chart(fig_lat, width="stretch")
+        _chart_header_with_info("chart_latency", "info_latency_meaning", "info_latency_purpose", "info_latency_example", "info_latency")
+        st.plotly_chart(fig_lat, use_container_width=True)
 
 
 def _mismatch_matrix(packets: List[Dict], t: callable) -> None:
-    """ORES (ALLOW/FLAG) x AMI (L0/L1/L2) matrisi."""
+    """ORES (ALLOW/FLAG) x MDM (L0/L1/L2) matrisi."""
     if not packets:
         return
-    matrix = {}
-    for ores in ("ALLOW", "FLAG"):
-        for lev in (0, 1, 2):
-            matrix[(ores, lev)] = 0
+    st.caption(t("info_mismatch_meaning"))
+    counts = {
+        ("ALLOW", 0): 0, ("ALLOW", 1): 0, ("ALLOW", 2): 0,
+        ("FLAG", 0): 0, ("FLAG", 1): 0, ("FLAG", 2): 0,
+    }
     for p in packets:
-        ores_d = (p.get("external") or {}).get("decision") or "ALLOW"
-        mdm_level = p.get("mdm", {}).get("level", 0)
-        if ores_d not in ("ALLOW", "FLAG"):
-            ores_d = "ALLOW"
-        matrix[(ores_d, mdm_level)] = matrix.get((ores_d, mdm_level), 0) + 1
-    st.markdown(f"**{t('chart_mismatch')}**")
-    cols = st.columns(4)
-    with cols[0]:
-        st.write("")
-    with cols[1]:
-        st.write("**L0**")
-    with cols[2]:
-        st.write("**L1**")
-    with cols[3]:
-        st.write("**L2**")
-    for ores in ("ALLOW", "FLAG"):
-        row = [f"**{ores}**", matrix.get((ores, 0), 0), matrix.get((ores, 1), 0), matrix.get((ores, 2), 0)]
-        c0, c1, c2, c3 = st.columns(4)
-        with c0:
-            st.write(row[0])
-        with c1:
-            st.write(row[1])
-        with c2:
-            st.write(row[2])
-        with c3:
-            st.write(row[3])
+        ores = ((p.get("external") or {}).get("decision") or "ALLOW").upper()
+        if ores not in ("ALLOW", "FLAG"):
+            ores = "ALLOW"
+        lv = p.get("mdm") or {}
+        lv = int(lv.get("level", 0) or 0)
+        lv = 0 if lv < 0 else 2 if lv > 2 else lv
+        counts[(ores, lv)] = counts.get((ores, lv), 0) + 1
+    table = [
+        {"ORES": "ALLOW", "L0": counts[("ALLOW", 0)], "L1": counts[("ALLOW", 1)], "L2": counts[("ALLOW", 2)]},
+        {"ORES": "FLAG", "L0": counts[("FLAG", 0)], "L1": counts[("FLAG", 1)], "L2": counts[("FLAG", 2)]},
+    ]
+    st.dataframe(table, hide_index=True, use_container_width=True)
 
 
 def _reason_breakdown(packets: List[Dict], t: callable) -> None:
@@ -564,13 +722,13 @@ def _reason_breakdown(packets: List[Dict], t: callable) -> None:
         return
     fig = go.Figure(data=[go.Bar(x=labels, y=values, marker_color="#6366f1")])
     fig.update_layout(
-        title=t("chart_reason_breakdown") + " (escalation_driver)",
-        xaxis_title="escalation_driver",
+        xaxis_title="reason",
         yaxis_title="count",
         height=260,
-        margin=dict(t=40, b=120, l=50, r=20),
+        margin=dict(t=20, b=120, l=50, r=20),
     )
-    st.plotly_chart(fig, width="stretch")
+    _chart_header_with_info("chart_reason_breakdown", "info_reason_meaning", "info_reason_purpose", "info_reason_example", "info_reason")
+    st.plotly_chart(fig, use_container_width=True)
 
 
 def _chart_as_norm_histogram(packets: List[Dict], t: callable) -> None:
@@ -594,7 +752,7 @@ def _chart_as_norm_histogram(packets: List[Dict], t: callable) -> None:
         height=260,
         margin=dict(t=40, b=50, l=50, r=20),
     )
-    st.plotly_chart(fig, width="stretch")
+    st.plotly_chart(fig, use_container_width=True)
 
 
 def _chart_drift_driver(packets: List[Dict], t: callable) -> None:
@@ -618,11 +776,11 @@ def _chart_drift_driver(packets: List[Dict], t: callable) -> None:
         height=260,
         margin=dict(t=40, b=100, l=50, r=20),
     )
-    st.plotly_chart(fig, width="stretch")
+    st.plotly_chart(fig, use_container_width=True)
 
 
 def _chart_pdamage_vs_level(packets: List[Dict], t: callable) -> None:
-    """p_damaging (ORES) vs AMI level dağılımı."""
+    """p_damaging (ORES) vs MDM level dağılımı."""
     last = packets[-80:] if len(packets) > 80 else packets
     if not last:
         return
@@ -644,16 +802,18 @@ def _chart_pdamage_vs_level(packets: List[Dict], t: callable) -> None:
     fig.update_layout(
         title=t("chart_pdamage_level"),
         xaxis_title="ores_p_damaging",
-        yaxis_title="AMI level",
+        yaxis_title="MDM level",
         yaxis=dict(tickvals=[0, 1, 2]),
         height=260,
         margin=dict(t=40, b=40, l=50, r=20),
         showlegend=True,
     )
-    st.plotly_chart(fig, width="stretch")
+    st.plotly_chart(fig, use_container_width=True)
 
 
 def _render_live_monitor(packets: List[Dict], t: callable) -> None:
+    if st.session_state.get("main_section") != "monitor":
+        return
     if not packets:
         if st.session_state.get("live_running"):
             try:
@@ -697,9 +857,11 @@ def _render_live_monitor(packets: List[Dict], t: callable) -> None:
             ext_allow += 1
         if p.get("latency_ms") is not None:
             latencies.append(p["latency_ms"])
-    c1, c2, c3, c4, c5, c6 = st.columns(6)
+    total = len(last_n)
+    l2_ratio = (level_counts.get(2, 0) / total * 100) if total else 0
+    c1, c2, c3, c4, c5, c6, c7 = st.columns(7)
     with c1:
-        st.metric(t("events"), len(last_n))
+        st.metric(t("events"), total)
     with c2:
         st.metric("L0", level_counts.get(0, 0))
     with c3:
@@ -707,28 +869,35 @@ def _render_live_monitor(packets: List[Dict], t: callable) -> None:
     with c4:
         st.metric("L2", level_counts.get(2, 0))
     with c5:
-        st.metric(t("external"), f"{ext_flag} / {ext_allow}")
+        st.metric(t("metric_l2_ratio"), f"{l2_ratio:.0f}%")
     with c6:
+        st.metric(t("external"), f"{ext_flag} / {ext_allow}")
+    with c7:
         avg_lat = sum(latencies) / len(latencies) if latencies else 0
         last_lat = latencies[-1] if latencies else "—"
         st.metric(t("avg_latency"), f"{avg_lat:.0f}" if latencies else "—")
         st.caption(f"{t('last_latency')}: {last_lat}")
     _charts(packets, t)
     st.markdown("---")
-    mcol1, mcol2, mcol3 = st.columns(3)
+    st.markdown("### " + t("chart_mismatch"))
+    mcol1, mcol2 = st.columns(2)
     with mcol1:
         _mismatch_matrix(packets, t)
     with mcol2:
-        _chart_pdamage_vs_level(packets, t)
-    with mcol3:
         _reason_breakdown(packets, t)
     st.markdown("---")
-    st.markdown("**" + t("calibration_section") + "**")
-    cal1, cal2 = st.columns(2)
-    with cal1:
-        _chart_as_norm_histogram(packets, t)
-    with cal2:
-        _chart_drift_driver(packets, t)
+    st.markdown("### " + t("advanced_calibration_expander"))
+    with st.expander(t("advanced_calibration_details"), expanded=False):
+        st.caption(t("advanced_calibration_caption"))
+        cal1, cal2 = st.columns(2)
+        with cal1:
+            _chart_header_with_info("chart_as_norm_histogram", "info_as_norm_meaning", "info_as_norm_purpose", "info_as_norm_example", "info_as_norm")
+            _chart_as_norm_histogram(packets, t)
+        with cal2:
+            _chart_header_with_info("chart_drift_driver", "info_drift_meaning", "info_drift_purpose", "info_drift_example", "info_drift")
+            _chart_drift_driver(packets, t)
+        _chart_header_with_info("chart_pdamage_level", "info_pdamage_meaning", "info_pdamage_purpose", "info_pdamage_example", "info_pdamage")
+        _chart_pdamage_vs_level(packets, t)
     st.markdown("---")
     level_filter = st.multiselect(t("filter_level"), [0, 1, 2], default=[0, 1, 2], format_func=lambda x: f"L{x}")
     ext_filter = st.multiselect(t("filter_ext"), ["FLAG", "ALLOW"], default=["FLAG", "ALLOW"])
@@ -747,7 +916,7 @@ def _render_live_monitor(packets: List[Dict], t: callable) -> None:
         return
     df_event = st.dataframe(
         rows,
-        width="stretch",
+        use_container_width=True,
         hide_index=True,
         column_config={
             "time": st.column_config.NumberColumn("time", format="%.1f"),
@@ -765,10 +934,10 @@ def _render_live_monitor(packets: List[Dict], t: callable) -> None:
     if sel and 0 <= sel[0] < len(filtered):
         st.session_state["selected_audit_packet"] = filtered[sel[0]]
 
-    # CSV export: ORES + AMI + tüm frenleme/model alanları
+    # CSV export: ORES + MDM + tüm frenleme/model alanları
     def _csv_cell(v):
         if v is None:
-            return "—"
+            return ""
         if isinstance(v, bool):
             return "true" if v else "false"
         if isinstance(v, (list, tuple)):
@@ -939,26 +1108,13 @@ def _render_decision_detail(packets: List[Dict], t: callable) -> None:
     review = p.get("review", {})
     if level == 2:
         st.markdown("---")
-        st.markdown("**" + t("detail_actions") + "**")
-        col_a, col_b = st.columns(2)
+        st.caption(t("detail_l2_resolve_in_review"))
         category = st.selectbox(t("category"), ["", "false_positive", "irony", "needs_context", "true_positive", "spam", "other"], key="detail_category")
         note = st.text_input(t("note"), key="detail_note")
         if category:
             review["category"] = category
         if note:
             review["note"] = note
-        with col_a:
-            if st.button("✅ " + t("approve"), key="detail_approve"):
-                review["status"] = "resolved"
-                review["decision"] = "approve"
-                _append_review_log(p, "approve", st.session_state.get("detail_category", ""), st.session_state.get("detail_note", ""))
-                st.success(t("saved"))
-        with col_b:
-            if st.button("❌ " + t("reject"), key="detail_reject"):
-                review["status"] = "resolved"
-                review["decision"] = "reject"
-                _append_review_log(p, "reject", st.session_state.get("detail_category", ""), st.session_state.get("detail_note", ""))
-                st.success(t("saved"))
 
 
 def _wiki_diff_url(p: Dict) -> str:
@@ -986,72 +1142,59 @@ def _render_review_queue(packets: List[Dict], t: callable) -> None:
     if not pending:
         st.info(t("review_none"))
         return
+    st.info(t("review_why_here"))
+    st.markdown("---")
     for i, p in enumerate(pending):
         mdm = p.get("mdm", {})
         inp = p.get("input", {})
-        with st.expander(f"L2 — {inp.get('title', '')[:40]} | {inp.get('user')} | reason={p.get('final_action_reason') or mdm.get('reason')}"):
-            # Bu L2'yi kim tetikledi? (ORES mi yakaladı, AMI mi "insana sor" dedi?)
-            ores_decision = (p.get("external") or {}).get("decision") or "—"
-            reason_driver = p.get("final_action_reason") or mdm.get("escalation_driver") or mdm.get("reason") or "—"
-            st.markdown("**Bu L2 nasıl anlaşılır?**")
+        title_short = (inp.get("title") or "")[:50]
+        user = inp.get("user") or "—"
+        with st.expander(f"**{title_short}** · {user}"):
+            ores_decision = (p.get("external") or {}).get("decision") or ""
+            reason_driver = p.get("final_action_reason") or mdm.get("escalation_driver") or mdm.get("reason") or ""
             if ores_decision == "FLAG" and "ores_flag" in str(reason_driver).lower():
-                st.info(
-                    "**ORES yakaladı.** Dış sistem (Wikipedia ORES) bu değişikliği şüpheli buldu (FLAG). "
-                    "AMI motoru L0 demiş olsa bile, 'sessiz geçme' politikası gereği L2'ye attık — yani **insan gözü baksın** diye. "
-                    "Siz diff'e bakıp gerçekten vandalizm/hata mı (Red) yoksa yanlış alarm mı (Onayla) karar veriyorsunuz."
-                )
-            elif ores_decision == "FLAG":
-                st.info(
-                    "**ORES FLAG** dedi (dış sistem şüphelendi). L2 nedeni: " + str(reason_driver) + ". "
-                    "Yine de insan incelemesiyle karar sizde."
-                )
+                st.caption(t("review_item_ores"))
             else:
-                st.info(
-                    "**Bizim sistem (AMI) 'insana sor' dedi.** ORES bu edit'e ALLOW demiş; ama AMI motoru (confidence, eşik, drift vb.) "
-                    "L2'ye yükseltti. Yani yakalayan ORES değil, sizin denetçi motorunuz — insan onayı istiyor."
-                )
-            st.caption(f"ORES kararı: **{ores_decision}** | Tetikleyici: **{reason_driver}**")
-            st.write(mdm.get("explain", ""))
-            if p.get("latency_ms") is not None:
-                st.caption(f"Latency: {p['latency_ms']} ms")
-            # Gerçek veri kaynağı: Wikipedia'da değişikliği aç + diff metni (insan gözüyle karar için)
-            st.markdown("**Gerçek veri kaynağı (inceleme için)**")
+                st.caption(t("review_item_mdm"))
             wiki_url = _wiki_diff_url(p)
             if wiki_url:
-                st.markdown(f"🔗 [**Wikipedia'da bu değişikliği aç**]({wiki_url}) — Sayfayı açıp ne eklendi/silindi gördükten sonra Onayla/Red verebilirsiniz.")
+                st.markdown(f"🔗 [{t('review_open_wiki')}]({wiki_url})")
             comment = (inp.get("comment") or "").strip()
             if comment:
-                st.caption(f"Edit özeti (kullanıcı yazdığı): {comment[:300]}")
+                st.caption(f"{t('review_edit_summary')}: {comment[:200]}")
+            st.markdown(f"**{t('review_change_label')}**")
             evidence = inp.get("evidence") or {}
             diff_text = evidence.get("diff") or p.get("diff_excerpt") or ""
             if diff_text:
-                st.caption(
-                    "**Nasıl okunur?** "
-                    "**(−) Eksi / sol/sarı** = Önceki sürüm (sayfada vardı, kaldırıldı veya değişti). "
-                    "**(+) Artı / sağ/mavi** = Yeni sürüm (bu değişiklikle gelen metin). "
-                    "Yani önce soldaki (eski), sonra sağdaki (yeni) okuyorsunuz."
-                )
-                diff_preview = (diff_text[:3000] + "…") if len(diff_text) > 3000 else diff_text
-                st.text_area("Yapılan değişiklik (diff) — aşağıdaki metne bakarak karar verebilirsiniz", value=diff_preview, height=220, key=f"rq_diff_{i}", disabled=True)
+                st.caption(t("review_diff_legend"))
+                diff_preview = (diff_text[:4000] + "…") if len(diff_text) > 4000 else diff_text
+                st.text_area("diff", value=diff_preview, height=240, key=f"rq_diff_{i}", disabled=True, label_visibility="collapsed")
             else:
-                st.caption("Diff alınamadı (MISSING/ERROR). Yukarıdaki Wikipedia linkinden sayfayı açıp inceleyebilirsiniz.")
-            st.markdown("---")
-            if st.button(t("open_detail"), key=f"rq_detail_{i}"):
-                st.session_state["selected_audit_packet"] = p
-                st.rerun()
-            if st.button("✅ " + t("approve"), key=f"rq_approve_{i}"):
-                p.setdefault("review", {})["status"] = "resolved"
-                p["review"]["decision"] = "approve"
-                _append_review_log(p, "approve", p.get("review", {}).get("category", ""), p.get("review", {}).get("note", ""))
-                st.rerun()
-            if st.button("❌ " + t("reject"), key=f"rq_reject_{i}"):
-                p.setdefault("review", {})["status"] = "resolved"
-                p["review"]["decision"] = "reject"
-                _append_review_log(p, "reject", p.get("review", {}).get("category", ""), p.get("review", {}).get("note", ""))
-                st.rerun()
+                st.caption(t("review_diff_unavailable"))
+            st.markdown(f"**{t('review_what_to_do')}**")
+            st.caption(t("review_approve_means"))
+            st.caption(t("review_reject_means"))
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                if st.button(t("open_detail"), key=f"rq_detail_{i}"):
+                    st.session_state["selected_audit_packet"] = p
+                    st.rerun()
+            with c2:
+                if st.button("✅ " + t("approve"), key=f"rq_approve_{i}"):
+                    p.setdefault("review", {})["status"] = "resolved"
+                    p["review"]["decision"] = "approve"
+                    _append_review_log(p, "approve", p.get("review", {}).get("category", ""), p.get("review", {}).get("note", ""))
+                    st.rerun()
+            with c3:
+                if st.button("❌ " + t("reject"), key=f"rq_reject_{i}"):
+                    p.setdefault("review", {})["status"] = "resolved"
+                    p["review"]["decision"] = "reject"
+                    _append_review_log(p, "reject", p.get("review", {}).get("category", ""), p.get("review", {}).get("note", ""))
+                    st.rerun()
 
 
 def _render_search_audit(packets: List[Dict], t: callable) -> None:
+    st.info(t("search_audit_explanation"))
     if not packets:
         st.info(t("no_data"))
         return
@@ -1070,7 +1213,7 @@ def _render_search_audit(packets: List[Dict], t: callable) -> None:
         filtered = l0_only[:: max(1, len(l0_only) // 100)] if len(l0_only) > 100 else l0_only[:10]
     rows = [decision_packet_to_flat_row(p) for p in filtered[:200]]
     if rows:
-        search_event = st.dataframe(rows, width="stretch", hide_index=True, key="search_table", on_select="rerun", selection_mode="single-row")
+        search_event = st.dataframe(rows, use_container_width=True, hide_index=True, key="search_table", on_select="rerun", selection_mode="single-row")
         sel = getattr(getattr(search_event, "selection", None), "rows", None) or []
         if sel and 0 <= sel[0] < len(filtered):
             st.session_state["selected_audit_packet"] = filtered[sel[0]]
@@ -1080,8 +1223,6 @@ def _render_search_audit(packets: List[Dict], t: callable) -> None:
 def main():
     if "lang" not in st.session_state:
         st.session_state["lang"] = "en"
-    if "theme" not in st.session_state:
-        st.session_state["theme"] = "Light"
     if "audit_packets" not in st.session_state:
         st.session_state["audit_packets"] = []
     if "live_running" not in st.session_state:
@@ -1089,18 +1230,35 @@ def main():
 
     t = _t
     # Dil: 2 seçenek (canlı test için)
-    lang = st.sidebar.radio(t("language"), ["en", "tr"], index=0 if st.session_state["lang"] == "en" else 1, horizontal=True, format_func=lambda x: "English" if x == "en" else "Türkçe")
+    lang = st.sidebar.radio(
+        t("language"),
+        ["en", "tr"],
+        key="lang_radio",
+        index=0 if st.session_state.get("lang", "en") == "en" else 1,
+        horizontal=True,
+        format_func=lambda x: "English" if x == "en" else "Türkçe",
+    )
     st.session_state["lang"] = lang
-    # Tema: 2 seçenek (Light/Dark) — tercih kaydedilir; Streamlit koyu modu sağ üst ⋮ menüsünden açılabilir
-    theme = st.sidebar.radio(t("theme"), ["Light", "Dark"], index=0 if st.session_state.get("theme") == "Light" else 1, horizontal=True, format_func=lambda x: t("theme_light") if x == "Light" else t("theme_dark"))
-    st.session_state["theme"] = theme
-    st.sidebar.caption(t("theme_caption"))
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("**" + (t("sidebar_section") if "sidebar_section" in (TEXTS.get(lang) or {}) else "Section") + "**")
+    opts = ["review", "monitor", "detail", "search", "quality"]
+    section = st.sidebar.radio(
+        "main_section",
+        opts,
+        format_func=lambda x: {"review": t("tab_review"), "monitor": t("tab_monitor"), "detail": t("tab_detail"), "search": t("tab_search"), "quality": t("tab_quality")}[x],
+        key="main_section",
+        label_visibility="collapsed",
+    )
+    st.sidebar.markdown("---")
 
     packets = _audit_packets()
     pending_l2 = len([p for p in packets if p.get("mdm", {}).get("level") == 2 and (p.get("review") or {}).get("status") == "pending"])
     header_right = f'<span class="badge">{t("review_pending")}: {pending_l2}</span>' if pending_l2 else ""
     st.markdown(
-        f'<div class="mdm-header"><h1>{t("title")}</h1><span class="badge">{t("badge")}</span>{header_right}</div>',
+        f'<div class="mdm-header">'
+        f'<div class="mdm-title-block"><h1>{t("title")} <span class="mdm-subtitle">({t("title_full")})</span></h1></div>'
+        f'<span class="badge">{t("badge")}</span>{header_right}'
+        f'</div>',
         unsafe_allow_html=True,
     )
 
@@ -1171,20 +1329,22 @@ def main():
                 st.session_state["audit_packets"] = packets
                 st.success(f"{len(packets)} {t('packets_label')}")
 
-    # Inbox-first: Review Queue ilk sekme (denetçi önceliği)
-    tab1, tab2, tab3, tab4, tab5 = st.tabs([t("tab_review"), t("tab_monitor"), t("tab_detail"), t("tab_search"), t("tab_quality")])
-    with tab1:
+    # Ana alanda bölüm başlığı her zaman görünsün (başlık yana kaymasın)
+    sec = st.session_state.get("main_section", "review")
+    section_titles = {"review": t("tab_review"), "monitor": t("tab_monitor"), "detail": t("tab_detail"), "search": t("tab_search"), "quality": t("tab_quality")}
+    st.subheader(section_titles.get(sec, t("tab_review")))
+    if sec == "review":
         _render_review_queue(packets, t)
-    with tab2:
+    elif sec == "monitor":
         _render_live_monitor(packets, t)
-    with tab3:
+    elif sec == "detail":
         _render_decision_detail(packets, t)
-    with tab4:
+    elif sec == "search":
         _render_search_audit(packets, t)
-    with tab5:
+    else:
         _render_quality_panel(packets, t)
 
-    if st.session_state.get("live_running"):
+    if st.session_state.get("live_running") and sec == "monitor":
         time.sleep(1.5)
         st.rerun()
 

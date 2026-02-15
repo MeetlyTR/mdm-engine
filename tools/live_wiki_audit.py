@@ -398,7 +398,7 @@ def run_live_loop(
                 latency_ms = round((time.time() - t0) * 1000, 2)
                 level = engine_result.get("escalation", 0)
                 ores_d = ext.get("decision") or "ALLOW"
-                # Wiki adapter policy: ORES FLAG + AMI L0 → sessiz override yok, L2 (HOLD_REVIEW)
+                # Wiki adapter policy: ORES FLAG + MDM L0 → sessiz override yok, L2 (HOLD_REVIEW)
                 wiki_ores_flag_override = ores_d == "FLAG" and level == 0
                 if wiki_ores_flag_override:
                     level = 2

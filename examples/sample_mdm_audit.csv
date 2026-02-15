@@ -1,0 +1,11 @@
+time,title,user,revid,ores_decision,ores_p_damaging,mdm_level,final_action,final_action_reason,mismatch,run_id,latency_ms
+1700000001.0,Sample Article A,User1,100001,ALLOW,0.02,0,APPLY,none,false,review-bundle-sample,120
+1700000002.0,Sample Article B,User2,100002,ALLOW,0.05,0,APPLY,none,false,review-bundle-sample,95
+1700000003.0,Sample Article C,User3,100003,FLAG,0.35,1,APPLY_CLAMPED,H_high,false,review-bundle-sample,140
+1700000004.0,Sample Article D,User4,100004,FLAG,0.7,2,HOLD_REVIEW,wiki:ores_flag_disagree,true,review-bundle-sample,180
+1700000005.0,Sample Article E,User5,100005,ALLOW,0.01,0,APPLY,none,false,review-bundle-sample,88
+1700000006.0,Sample Article F,User6,100006,FLAG,0.45,2,HOLD_REVIEW,confidence_low,false,review-bundle-sample,200
+1700000007.0,Sample Article G,User7,100007,ALLOW,0.03,0,APPLY,none,false,review-bundle-sample,102
+1700000008.0,Sample Article H,User8,100008,ALLOW,0.08,1,APPLY_CLAMPED,H_high,false,review-bundle-sample,135
+1700000009.0,Sample Article I,User9,100009,FLAG,0.6,2,HOLD_REVIEW,wiki:ores_flag_disagree,true,review-bundle-sample,190
+1700000010.0,Sample Article J,User10,100010,ALLOW,0.04,0,APPLY,none,false,review-bundle-sample,98

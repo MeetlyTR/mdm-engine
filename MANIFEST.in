@@ -6,7 +6,7 @@ include AUDITABILITY.md
 include CHANGELOG.md
 include engine.py
 include config.py
-recursive-include ami_engine *.py
+recursive-include mdm_engine *.py
 recursive-include core *.py
 recursive-include config_profiles *.py
 recursive-include visualization *.py

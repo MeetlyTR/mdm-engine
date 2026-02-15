@@ -14,7 +14,7 @@ CONFIG = {
     "CUS_MEAN_THRESHOLD": 0.90,  # 0.88 → 0.90; cus_mean ~0.89 civarında takılıyorsa L0 oranı artar
     # Fail-safe: varsayılan 0.6 ile wiki grid'de sürekli worst_H > 0.6 → hep L2. Sadece aşırı H'da tetiklensin.
     "H_CRITICAL": 0.95,
-    # Constraint kutusu: H_MAX gevşetildi; J_MIN varsayılan 0.85 → mdm_J ~0.75 sürekli J_MIN altında → margin -0.1
-    "J_MIN": 0.65,  # 0.85 → 0.65; seçilen aksiyonun J'si artık kutuda → L0 çıkabilir
+    # Constraint kutusu: H_MAX gevşetildi. Wiki grid'de seçilen aksiyon mdm_J ~0.59; J_MIN 0.55 olunca margin ≥ 0 → L0 çıkabilir.
+    "J_MIN": 0.55,  # 0.65 → 0.55; mdm_J ~0.59 kutuda kalsın, constraint_violation tetiklenmesin
     "H_MAX": 0.55,
 }

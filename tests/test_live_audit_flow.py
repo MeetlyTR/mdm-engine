@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Canlı akış testi: EventStreams + ORES + AMI pipeline'ı çalıştırır,
+Canlı akış testi: EventStreams + ORES + MDM pipeline'ı çalıştırır,
 en az 1 paket veya N olay görülene kadar bekler (timeout 45s).
 Kullanım: cd repo_kökü && python tests/test_live_audit_flow.py
 """
@@ -98,6 +98,6 @@ if __name__ == "__main__":
     mod = test_get_live_module()
     print(f"  Modül: {mod.__name__}, LIVE_PACKETS={type(mod.LIVE_PACKETS)}, run_live_loop={hasattr(mod, 'run_live_loop')}")
 
-    print("Test: Canlı akış (EventStreams + ORES + AMI), en fazla 45s...")
+    print("Test: Canlı akış (EventStreams + ORES + MDM), en fazla 45s...")
     test_run_live_loop_receives_data()
     print("Tüm testler geçti.")

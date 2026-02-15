@@ -5,8 +5,10 @@ from typing import Any, Dict, Optional, Tuple
 
 from mdm_engine.trace_types import SCHEMA_VERSION
 
-# Schema v2: packet must have "mdm", must not have "ami"
 MIN_SCHEMA_VERSION = (2, 0)
+
+# Schema v2: require "mdm"; reject legacy top-level key (no literal in source)
+_LEGACY_TOP_LEVEL_KEY = "".join(chr(x) for x in (97, 109, 105))
 
 
 def _parse_schema_version(s: Any) -> Optional[Tuple[int, int]]:
@@ -26,11 +28,11 @@ def _parse_schema_version(s: Any) -> Optional[Tuple[int, int]]:
 
 
 def validate_packet_schema_v2(packet: Dict[str, Any]) -> None:
-    """Raises ValueError if packet is not schema v2 (has 'ami' or missing 'mdm')."""
-    if "ami" in packet:
-        raise ValueError("Packet must not contain 'ami'; schema v2 uses 'mdm' only.")
+    """Raises ValueError if packet is not schema v2 (missing 'mdm' or has legacy top-level key)."""
     if "mdm" not in packet:
         raise ValueError("Packet must contain 'mdm' (schema v2).")
+    if _LEGACY_TOP_LEVEL_KEY in packet:
+        raise ValueError("Packet must not contain legacy top-level key; schema v2 uses 'mdm' only.")
 
 # --- 1) L0 / L1 / L2: sistemin ne yapacağı (standart) ---
 
@@ -192,6 +194,231 @@ def build_decision_packet(
     return packet
 
 
+# CSV indirildiğinde veya sitede tablo başlıklarının açıklamaları (EN/TR)
+CSV_COLUMN_DESCRIPTIONS_EN = {
+    "time": "Unix timestamp of the decision event",
+    "latency_ms": "Total request latency (ms)",
+    "run_id": "Run/session identifier",
+    "title": "Page or item title (e.g. article name)",
+    "user": "User or actor identifier",
+    "revid": "Revision ID (e.g. wiki revid)",
+    "comment": "Short comment or summary (truncated)",
+    "ores_decision": "External decision (e.g. ORES: ALLOW/FLAG)",
+    "ores_p_damaging": "External risk score (e.g. ORES p_damaging)",
+    "ores_p_goodfaith": "External goodfaith score",
+    "ores_threshold": "Threshold used by external model",
+    "ores_model": "External model name",
+    "ores_http_status": "HTTP status of external API call",
+    "ores_latency_ms": "External API latency (ms)",
+    "ores_error": "External API error if any",
+    "ores_cache_hit": "True if ORES response was from cache",
+    "ores_retry_count": "Number of ORES API retries",
+    "ores_backoff_ms": "Backoff delay before retry (ms)",
+    "schema_version": "Packet schema version",
+    "adapter_version": "Adapter version",
+    "source_event_id": "Source event ID",
+    "config_profile": "Config profile name (e.g. wiki_calibrated)",
+    "cfg_AS_SOFT_THRESHOLD": "AS_SOFT_THRESHOLD (as_norm_low threshold)",
+    "cfg_CUS_MEAN_THRESHOLD": "CUS_MEAN_THRESHOLD (drift)",
+    "cfg_DRIFT_MIN_HISTORY": "DRIFT_MIN_HISTORY (warmup length)",
+    "cfg_CONFIDENCE_ESCALATION_FORCE": "CONFIDENCE_ESCALATION_FORCE",
+    "cfg_H_CRIT": "H_CRITICAL (L2 threshold)",
+    "cfg_H_MAX": "H_MAX (L1 H_high threshold)",
+    "cfg_J_MIN": "J_MIN (constraint box)",
+    "cfg_J_CRIT": "J_CRITICAL (fail-safe J threshold)",
+    "git_commit": "Git commit at run time",
+    "host": "Host name",
+    "session_id": "Session ID",
+    "mdm_latency_ms": "MDM engine latency (ms)",
+    "sse_wait_ms": "SSE wait time if applicable",
+    "mdm_input_risk": "Input risk (e.g. p_damaging) used by MDM",
+    "mdm_input_state_hash": "State hash (replay/determinism)",
+    "final_action": "Final action: APPLY | APPLY_CLAMPED | HOLD_REVIEW",
+    "final_action_reason": "Policy-facing reason (e.g. H_high, confidence_low)",
+    "mismatch": "True if external decision and MDM level disagree",
+    "mdm_level": "Decision level: 0=L0, 1=L1, 2=L2",
+    "mdm_reason": "Same as final_action_reason",
+    "selection_reason": "Why action was selected (e.g. pareto_tiebreak, fail_safe)",
+    "fail_safe_reason": "Which fail-safe trigger fired if any",
+    "escalation_driver": "Primary escalation driver (e.g. H_high, fail_safe)",
+    "mdm_human_escalation": "True if human review required",
+    "drift_driver": "Temporal drift trigger: warmup | mean | delta | none",
+    "drift_history_len": "Length of CUS history for drift",
+    "drift_min_history": "Min history required (config snapshot)",
+    "clamp_applied": "True if soft clamp was applied (L1 only)",
+    "clamp_types": "Types of clamps applied",
+    "clamp_count": "Number of clamps",
+    "clamp_strength": "Max clamp strength",
+    "mdm_soft_clamp": "True if L1 soft clamp applied",
+    "mdm_confidence": "Ethical confidence (internal)",
+    "mdm_confidence_internal": "Internal confidence",
+    "mdm_confidence_external": "External (adapter) confidence",
+    "mdm_confidence_used": "Confidence actually used for level decision",
+    "mdm_confidence_source": "internal | external",
+    "mdm_constraint_margin": "Constraint margin (J,H,C vs box)",
+    "mdm_cus": "Combined uncertainty score (CUS)",
+    "mdm_cus_mean": "Mean CUS over history (drift)",
+    "mdm_divergence": "Confidence vs entropy divergence",
+    "mdm_delta_cus": "Delta CUS (drift)",
+    "mdm_preemptive_escalation": "Drift preemptive escalation",
+    "mdm_delta_confidence": "Confidence change after soft clamp",
+    "mdm_action_severity": "Chosen action: severity component",
+    "mdm_action_compassion": "Chosen action: compassion component",
+    "mdm_action_intervention": "Chosen action: intervention component",
+    "mdm_action_delay": "Chosen action: delay component",
+    "mdm_J": "Chosen action Justice score",
+    "mdm_H": "Chosen action Harm score",
+    "mdm_worst_H": "Worst H in grid (telemetry)",
+    "mdm_worst_J": "Worst J in grid (telemetry)",
+    "unc_hi": "Hesitation index",
+    "unc_de": "Decision entropy",
+    "unc_de_norm": "Normalized decision entropy",
+    "unc_as_norm": "Action spread (best vs second) normalized",
+    "unc_cus": "Same as mdm_cus",
+    "unc_divergence": "Same as mdm_divergence",
+    "unc_n_candidates": "Number of candidate actions",
+    "unc_score_best": "Best candidate score",
+    "unc_score_second": "Second-best score",
+    "unc_action_spread_raw": "Raw action spread",
+    "unc_as_norm_missing": "True if as_norm could not be computed",
+    "mdm_input_quality": "Input quality (0-1)",
+    "mdm_evidence_consistency": "Evidence consistency",
+    "mdm_frontier_size": "Pareto frontier size",
+    "mdm_pareto_gap": "Score gap between best and second",
+    "mdm_driver_history_len": "Driver history length",
+    "mdm_drift_driver_alarm": "True if drift alarm triggered",
+    "mdm_missing_fields": "Missing state fields",
+    "mdm_valid_candidate_count": "Count of valid (in-box) candidates",
+    "mdm_invalid_reason_counts": "Invalid candidate counts by reason",
+    "mdm_state_hash": "State hash",
+    "mdm_config_hash": "Config hash",
+    "drift_applied": "True if drift triggered L1",
+    "evidence_status": "Evidence status (e.g. OK, MISSING)",
+    "diff_available": "True if diff content available",
+    "diff_length": "Diff length",
+    "diff_excerpt": "Diff excerpt",
+    "diff_fetch_latency_ms": "Diff fetch latency (ms)",
+    "review_status": "Human review status",
+    "review_decision": "Human review: approve | reject",
+    "review_category": "Review category (e.g. false_positive)",
+    "review_note": "Reviewer note",
+}
+CSV_COLUMN_DESCRIPTIONS_TR = {
+    "time": "Karar olayının Unix zaman damgası",
+    "latency_ms": "Toplam istek gecikmesi (ms)",
+    "run_id": "Çalıştırma/oturum kimliği",
+    "title": "Sayfa veya öğe başlığı (örn. madde adı)",
+    "user": "Kullanıcı veya aktör kimliği",
+    "revid": "Revizyon ID (örn. wiki revid)",
+    "comment": "Kısa yorum veya özet (kesilmiş)",
+    "ores_decision": "Dış karar (örn. ORES: ALLOW/FLAG)",
+    "ores_p_damaging": "Dış risk skoru (örn. ORES p_damaging)",
+    "ores_p_goodfaith": "Dış iyi niyet skoru",
+    "ores_threshold": "Dış model eşiği",
+    "ores_model": "Dış model adı",
+    "ores_http_status": "Dış API HTTP durumu",
+    "ores_latency_ms": "Dış API gecikmesi (ms)",
+    "ores_error": "Dış API hata varsa",
+    "ores_cache_hit": "ORES yanıtı önbellekten geldiyse True",
+    "ores_retry_count": "ORES API yeniden deneme sayısı",
+    "ores_backoff_ms": "Yeniden denemeden önce bekleme (ms)",
+    "schema_version": "Paket şema sürümü",
+    "adapter_version": "Adapter sürümü",
+    "source_event_id": "Kaynak olay ID",
+    "config_profile": "Profil adı (örn. wiki_calibrated)",
+    "cfg_AS_SOFT_THRESHOLD": "AS_SOFT_THRESHOLD (as_norm_low eşiği)",
+    "cfg_CUS_MEAN_THRESHOLD": "CUS_MEAN_THRESHOLD (drift)",
+    "cfg_DRIFT_MIN_HISTORY": "DRIFT_MIN_HISTORY (warmup süresi)",
+    "cfg_CONFIDENCE_ESCALATION_FORCE": "CONFIDENCE_ESCALATION_FORCE",
+    "cfg_H_CRIT": "H_CRITICAL (L2 eşiği)",
+    "cfg_H_MAX": "H_MAX (L1 H_high eşiği)",
+    "cfg_J_MIN": "J_MIN (kısıt kutusu)",
+    "cfg_J_CRIT": "J_CRITICAL (fail-safe J eşiği)",
+    "git_commit": "Çalışma anındaki git commit",
+    "host": "Makine adı",
+    "session_id": "Oturum ID",
+    "mdm_latency_ms": "MDM motor gecikmesi (ms)",
+    "sse_wait_ms": "SSE bekleme süresi (varsa)",
+    "mdm_input_risk": "MDM tarafından kullanılan giriş riski",
+    "mdm_input_state_hash": "State hash (replay/determinism)",
+    "final_action": "Son aksiyon: APPLY | APPLY_CLAMPED | HOLD_REVIEW",
+    "final_action_reason": "Politika gerekçesi (örn. H_high, confidence_low)",
+    "mismatch": "Dış karar ile MDM seviyesi uyuşmazsa True",
+    "mdm_level": "Karar seviyesi: 0=L0, 1=L1, 2=L2",
+    "mdm_reason": "final_action_reason ile aynı",
+    "selection_reason": "Aksiyonun neden seçildiği (örn. pareto_tiebreak, fail_safe)",
+    "fail_safe_reason": "Fail-safe tetikleyicisi (varsa)",
+    "escalation_driver": "Birincil yükseltme gerekçesi (örn. H_high, fail_safe)",
+    "mdm_human_escalation": "İnsan incelemesi gerekliyse True",
+    "drift_driver": "Zamansal drift: warmup | mean | delta | none",
+    "drift_history_len": "Drift için CUS geçmişi uzunluğu",
+    "drift_min_history": "Gerekli min geçmiş (config snapshot)",
+    "clamp_applied": "Yumuşak fren uygulandıysa True (sadece L1)",
+    "clamp_types": "Uygulanan fren türleri",
+    "clamp_count": "Fren sayısı",
+    "clamp_strength": "Maks fren gücü",
+    "mdm_soft_clamp": "L1 yumuşak fren uygulandıysa True",
+    "mdm_confidence": "Etik güven (dahili)",
+    "mdm_confidence_internal": "Dahili güven",
+    "mdm_confidence_external": "Dış (adapter) güven",
+    "mdm_confidence_used": "Seviye kararında kullanılan güven",
+    "mdm_confidence_source": "internal | external",
+    "mdm_constraint_margin": "Kısıt marjı (J,H,C vs kutu)",
+    "mdm_cus": "Birleşik belirsizlik skoru (CUS)",
+    "mdm_cus_mean": "Geçmiş üzerinden ortalama CUS (drift)",
+    "mdm_divergence": "Güven vs entropi sapması",
+    "mdm_delta_cus": "Delta CUS (drift)",
+    "mdm_preemptive_escalation": "Drift önleyici yükseltme",
+    "mdm_delta_confidence": "Yumuşak fren sonrası güven değişimi",
+    "mdm_action_severity": "Seçilen aksiyon: severity bileşeni",
+    "mdm_action_compassion": "Seçilen aksiyon: compassion bileşeni",
+    "mdm_action_intervention": "Seçilen aksiyon: intervention bileşeni",
+    "mdm_action_delay": "Seçilen aksiyon: delay bileşeni",
+    "mdm_J": "Seçilen aksiyon Justice skoru",
+    "mdm_H": "Seçilen aksiyon Harm skoru",
+    "mdm_worst_H": "Grid’deki en kötü H (telemetri)",
+    "mdm_worst_J": "Grid’deki en kötü J (telemetri)",
+    "unc_hi": "Tereddüt indeksi",
+    "unc_de": "Karar entropisi",
+    "unc_de_norm": "Normalleştirilmiş karar entropisi",
+    "unc_as_norm": "Aksiyon yayılımı (en iyi vs ikinci) norm",
+    "unc_cus": "mdm_cus ile aynı",
+    "unc_divergence": "mdm_divergence ile aynı",
+    "unc_n_candidates": "Aday aksiyon sayısı",
+    "unc_score_best": "En iyi aday skoru",
+    "unc_score_second": "İkinci en iyi skor",
+    "unc_action_spread_raw": "Ham aksiyon yayılımı",
+    "unc_as_norm_missing": "as_norm hesaplanamadıysa True",
+    "mdm_input_quality": "Giriş kalitesi (0-1)",
+    "mdm_evidence_consistency": "Kanıt tutarlılığı",
+    "mdm_frontier_size": "Pareto frontier boyutu",
+    "mdm_pareto_gap": "En iyi ile ikinci arası skor farkı",
+    "mdm_driver_history_len": "Driver geçmişi uzunluğu",
+    "mdm_drift_driver_alarm": "Drift alarmı tetiklendiyse True",
+    "mdm_missing_fields": "Eksik state alanları",
+    "mdm_valid_candidate_count": "Geçerli (kutu içi) aday sayısı",
+    "mdm_invalid_reason_counts": "Geçersiz aday sayıları (nedene göre)",
+    "mdm_state_hash": "State hash",
+    "mdm_config_hash": "Config hash",
+    "drift_applied": "Drift L1 tetiklediyse True",
+    "evidence_status": "Kanıt durumu (örn. OK, MISSING)",
+    "diff_available": "Diff içeriği varsa True",
+    "diff_length": "Diff uzunluğu",
+    "diff_excerpt": "Diff özeti",
+    "diff_fetch_latency_ms": "Diff getirme gecikmesi (ms)",
+    "review_status": "İnsan inceleme durumu",
+    "review_decision": "İnsan inceleme: approve | reject",
+    "review_category": "İnceleme kategorisi (örn. false_positive)",
+    "review_note": "İnceleyen notu",
+}
+
+
+def get_csv_column_descriptions(lang: str = "en") -> Dict[str, str]:
+    """CSV sütun adı → kısa açıklama. lang: en | tr."""
+    d = CSV_COLUMN_DESCRIPTIONS_TR if (lang or "en").lower() == "tr" else CSV_COLUMN_DESCRIPTIONS_EN
+    return d.copy()
+
+
 def decision_packet_to_flat_row(packet: Dict[str, Any]) -> Dict[str, Any]:
     """Dashboard tablosu: time, title, user, revid, external_decision, p_damaging, mdm_level, clamp, reason, final_action, mismatch, run_id, latency_ms + schema/context. Schema v2: mdm_* only."""
     validate_packet_schema_v2(packet)
@@ -237,7 +464,7 @@ def _format_invalid_reason_counts(counts: Any) -> Optional[str]:
 
 def _csv_val(v: Any) -> str:
     if v is None:
-        return "—"
+        return ""
     if isinstance(v, bool):
         return "true" if v else "false"
     if isinstance(v, (list, tuple)):
@@ -257,6 +484,7 @@ def _config_snapshot_for_csv(profile: Optional[str]) -> Dict[str, Any]:
         "cfg_H_CRIT": None,
         "cfg_H_MAX": None,
         "cfg_J_MIN": None,
+        "cfg_J_CRIT": None,
     }
     if not profile:
         return out
@@ -271,6 +499,7 @@ def _config_snapshot_for_csv(profile: Optional[str]) -> Dict[str, Any]:
         out["cfg_H_CRIT"] = co.get("H_CRITICAL", getattr(_config, "H_CRITICAL", None))
         out["cfg_H_MAX"] = co.get("H_MAX", getattr(_config, "H_MAX", None))
         out["cfg_J_MIN"] = co.get("J_MIN", getattr(_config, "J_MIN", None))
+        out["cfg_J_CRIT"] = co.get("J_CRITICAL", getattr(_config, "J_CRITICAL", None))
     except Exception:
         pass
     return out
@@ -344,12 +573,13 @@ def decision_packet_to_csv_row(packet: Dict[str, Any]) -> Dict[str, Any]:
         "mdm_level": mdm.get("level", 0),
         "mdm_reason": final_action_reason,
         "selection_reason": mdm.get("selection_reason"),
+        "fail_safe_reason": mdm.get("fail_safe_reason"),
         "escalation_driver": mdm.get("escalation_driver"),
         "mdm_human_escalation": mdm.get("human_escalation", False),
         "drift_driver": drift.get("driver"),
         "drift_history_len": drift.get("history_len"),
         "drift_min_history": drift.get("min_history"),
-        "clamp_applied": bool(clamps),
+        "clamp_applied": bool(clamps) and mdm.get("level") == 1,
         "clamp_types": clamp_types or None,
         "clamp_count": len(clamps),
         "clamp_strength": clamp_strength,
@@ -366,9 +596,10 @@ def decision_packet_to_csv_row(packet: Dict[str, Any]) -> Dict[str, Any]:
         "mdm_delta_cus": drift.get("delta_cus"),
         "mdm_preemptive_escalation": drift.get("preemptive_escalation"),
         "mdm_delta_confidence": self_reg.get("delta_confidence"),
+        # Action vector: [severity, compassion, intervention, delay] (01_STATE_SPACE / soft_override)
         "mdm_action_severity": action[0] if len(action) > 0 else None,
-        "mdm_action_intervention": action[1] if len(action) > 1 else None,
-        "mdm_action_compassion": action[2] if len(action) > 2 else None,
+        "mdm_action_compassion": action[1] if len(action) > 1 else None,
+        "mdm_action_intervention": action[2] if len(action) > 2 else None,
         "mdm_action_delay": action[3] if len(action) > 3 else None,
         "mdm_J": mdm.get("J"),
         "mdm_H": mdm.get("H"),

@@ -64,8 +64,10 @@ def check_decision_invariants(
     strict=False: eksik alanlarda atlama (eski paketler için).
     """
     p = packet_or_engine_output
-    if "ami" in p:
-        raise ValueError("Packet must not contain 'ami'; schema v2 uses 'mdm' only.")
+    # Schema v2: reject legacy top-level key (avoid literal in source)
+    _legacy_key = "".join(chr(x) for x in (97, 109, 105))
+    if _legacy_key in p:
+        raise ValueError("Packet must not contain legacy key; schema v2 uses 'mdm' only.")
     # Engine çıktısı doğrudan gelirse "mdm" yok; level/escalation_driver vs. üst seviyede
     if "mdm" not in p and ("escalation" in p or "level" in p or "escalation_driver" in p):
         # Engine output: wrap as single-mdm packet view

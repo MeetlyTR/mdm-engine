@@ -52,6 +52,24 @@ See [CHANGELOG.md](CHANGELOG.md) for the full migration note.
 
 ---
 
+## Run instructions (review bundle)
+
+- **Quick start**
+  - `pip install -e .` or `pip install mdm-engine`
+  - `streamlit run visualization/dashboard.py` (dashboard UI; default port 8501)
+- **Offline demo**
+  - Open dashboard → Sidebar: load JSONL → choose `examples/sample_packets.jsonl` for a small “load and view” demo.
+- **Live Wikipedia demo**
+  - In dashboard: “Start live stream”. EventStreams + ORES + MDM pipeline runs; see `tools/live_wiki_audit.py` for connection and evidence/diff fetch.
+- **CSV export**
+  - In dashboard: “Live Monitor” or “Search & Audit” → “Download CSV” button for full audit (ORES + MDM + clamp/model columns).
+- **Review log**
+  - Approve/Reject on L2 items append to `review_log.jsonl` (env: `MDM_REVIEW_LOG`). “Quality” tab reads this for override rate and reason heatmap.
+
+See [REVIEW_BUNDLE.md](REVIEW_BUNDLE.md) for repo layout, important files, and one-command smoke test (`python tools/smoke_test.py`).
+
+---
+
 ## What It Does
 
 MDM (Model Oversight Engine) is a **regulation-grade** engine for **model oversight**: it does not make decisions itself but monitors and constrains them. It takes raw state as input, computes moral scores (Justice, Harm, Compassion), and produces safe actions through **three-level escalation** (L0/L1/L2).

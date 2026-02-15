@@ -29,6 +29,7 @@ from core import (
     validate_constraints,
     fail_safe,
     select_action,
+    SelectionResult,
     TraceLogger,
     MoralScores,
     compute_confidence,
@@ -171,16 +172,31 @@ def moral_decision_engine(
 
     worst_J = min(s.J for _, s in scored)
     worst_H = max(s.H for _, s in scored)
-    fs = fail_safe(MoralScores(W=0, J=worst_J, H=worst_H, C=0), j_crit=j_crit, h_crit=h_crit)
+    # Fail-safe: seçilen (chosen) aksiyonun J/H ile tetikle; worst sadece telemetri (L0 dengelenebilsin).
+    fs_tentative = FailSafeResult(override=False, safe_action=(getattr(_config, "SAFE_ACTION", [0.0, 0.5, 0.0, 1.0])).copy(), human_escalation=False, trigger=None)
+    sel = select_action(candidates, fs_tentative, DEFAULT_WEIGHTS, config=co, use_pareto=True)
+    chosen_scores = next((s for a, s in candidates if a == sel.action), None)
+    if chosen_scores is not None:
+        fs = fail_safe(MoralScores(W=0, J=chosen_scores.J, H=chosen_scores.H, C=0), j_crit=j_crit, h_crit=h_crit)
+    else:
+        fs = fail_safe(MoralScores(W=0, J=worst_J, H=worst_H, C=0), j_crit=j_crit, h_crit=h_crit)
     logger.log(5, "fail_safe", {"override": fs.override, "human_escalation": fs.human_escalation})
+
+    if fs.override and fs.safe_action is not None:
+        sel = SelectionResult(
+            action=fs.safe_action,
+            score=None,
+            reason="fail_safe",
+            frontier_size=sel.frontier_size,
+            pareto_gap=sel.pareto_gap,
+        )
+        chosen_scores = None
 
     candidate_scores = [
         DEFAULT_WEIGHTS.alpha * s.W + DEFAULT_WEIGHTS.beta * s.J
         - DEFAULT_WEIGHTS.gamma * s.H + DEFAULT_WEIGHTS.delta * s.C
         for _, s in candidates
     ]
-
-    sel = select_action(candidates, fs, DEFAULT_WEIGHTS, config=co, use_pareto=True)
 
     if sel.reason in ("fail_safe", "no_valid_fallback") and fs.safe_action is not None:
         selected_scores = evaluate_moral(x_t, fs.safe_action)
@@ -246,6 +262,12 @@ def moral_decision_engine(
             effective_confidence = conf.confidence
         effective_confidence = max(0.0, min(1.0, effective_confidence * input_quality_result.input_quality))
 
+    # H_high / H_critical: seçilen aksiyonun H'ine göre karar ver (worst_H tüm grid'den L0'ı kapatmasın)
+    selected_H = None
+    if selection_data.get("scores"):
+        selected_H = selection_data["scores"].get("H")
+    H_for_escalation = selected_H if selected_H is not None else worst_H
+
     base_level = 0
     base_driver = "none"
     escalation_drivers: List[str] = []
@@ -253,7 +275,7 @@ def moral_decision_engine(
         base_level, base_driver = compute_escalation_decision(
             effective_confidence,
             conf.constraint_margin,
-            worst_H,
+            H_for_escalation,
             h_crit,
             config=co,
             h_high=h_max,
@@ -265,7 +287,7 @@ def moral_decision_engine(
         escalation = compute_escalation_level(
             effective_confidence,
             conf.constraint_margin,
-            worst_H,
+            H_for_escalation,
             h_crit,
             config=co,
             h_high=h_max,
@@ -279,6 +301,10 @@ def moral_decision_engine(
     if sel.reason == "no_valid_fallback":
         escalation = 2
         escalation_drivers = ["no_valid_candidates"]
+    # Hard invariant: fail_safe ⇒ level=2, HOLD_REVIEW, clamp_applied=False (INVARIANTS_SCHEMA_METRICS)
+    if fs.override:
+        escalation = 2
+        escalation_drivers = ["fail_safe"]
 
     temporal_drift_data: Optional[Dict[str, Any]] = None
     if context is not None and uncertainty is not None:
@@ -456,6 +482,8 @@ def moral_decision_engine(
     # H_critical kararı worst_H ile alınır; CSV'de mdm_H (seçilen) vs mdm_worst_H tutarlılığı
     out["worst_H"] = worst_H
     out["worst_J"] = worst_J
+    if fs.override and getattr(fs, "trigger", None):
+        out["fail_safe_reason"] = fs.trigger
     # Tavsiye §1: input quality / evidence consistency
     out["input_quality"] = input_quality_result.input_quality
     out["evidence_consistency"] = input_quality_result.evidence_consistency
