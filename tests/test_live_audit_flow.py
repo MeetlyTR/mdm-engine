@@ -14,8 +14,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 
-def test_get_live_module():
-    """Dashboard'ın kullandığı import: tools.live_wiki_audit veya dosyadan."""
+def _get_live_module():
+    """Ortak yardımcı: tools.live_wiki_audit modülünü döndürür (import veya dosyadan)."""
     import importlib.util
     if str(ROOT) not in sys.path:
         sys.path.insert(0, str(ROOT))
@@ -36,9 +36,14 @@ def test_get_live_module():
     return mod
 
 
+def test_get_live_module():
+    """Dashboard'ın kullandığı import: tools.live_wiki_audit erişilebilir olmalı."""
+    assert _get_live_module() is not None
+
+
 def test_run_live_loop_receives_data():
     """run_live_loop başlar, EventStreams'e bağlanır ve en az 1 paket veya olay gelir."""
-    mod = test_get_live_module()
+    mod = _get_live_module()
     LIVE_PACKETS = mod.LIVE_PACKETS
     LIVE_STATUS = mod.LIVE_STATUS
     run_live_loop = mod.run_live_loop

@@ -32,7 +32,7 @@ git commit -s -m "Your commit message"
 - Training and workshops
 - Custom feature development
 
-For commercial inquiries, please contact: **mucahit.muzaffer@gmail.com**
+For commercial inquiries, see the maintainer in `pyproject.toml` or open a GitHub Discussion.
 
 **Support Scope:**
 - **Community Support**: Best-effort via GitHub Issues (no SLA)
@@ -149,7 +149,7 @@ python run_all_tests.py
 
 - **General Questions**: Open a GitHub Discussion
 - **Security**: See SECURITY.md
-- **Contact**: mucahit.muzaffer@gmail.com
+- **Contact**: See repository maintainer (pyproject.toml) or open an issue.
 
 ---
 

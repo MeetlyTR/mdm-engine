@@ -1,14 +1,11 @@
-# Model Oversight Engine (MDM)  
-## Model Denetim Motoru (MDM)
+# Model Oversight Engine (MDM)
 
-**L0/L1/L2 oversight, clamps, human-in-the-loop review, and end-to-end audit telemetry.**  
-*L0/L1/L2 denetim, clamp, insan incelemesi ve uçtan uca audit/telemetri.*
+**L0/L1/L2 oversight, clamps, human-in-the-loop review, and end-to-end audit telemetry.**
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-> **MDM**, modellerin verdiği kararları L0/L1/L2 seviyelerinde denetleyen; gerektiğinde frenleyen (clamp) ve insan incelemesine yükselten (L2) bir oversight motorudur.  
-> *MDM is an oversight engine that monitors model decisions at L0/L1/L2, applies clamps when needed, and escalates to human review at L2.*
+> MDM is an oversight engine that monitors model decisions at L0/L1/L2, applies clamps when needed, and escalates to human review at L2.
 
 ---
 
@@ -39,7 +36,7 @@ mdm realtime          # Run live test
 mdm tests             # Run test suite
 ```
 
-**Dashboard:** `mdm dashboard` = **Proof dashboard** (tek ekran, kanıt kartları, seed’li run-until-coverage; desteklenen kararlı UI). `--full` = gelişmiş/araştırma dashboard’u (deneysel, isteğe bağlı).
+**Dashboard:** `mdm dashboard` = Proof dashboard (single screen, proof cards, seed-based run). `--full` = research/advanced dashboard (experimental).
 
 ### Migrating from the previous package?
 
@@ -66,7 +63,7 @@ See [CHANGELOG.md](CHANGELOG.md) for the full migration note.
 - **Review log**
   - Approve/Reject on L2 items append to `review_log.jsonl` (env: `MDM_REVIEW_LOG`). “Quality” tab reads this for override rate and reason heatmap.
 
-See [REVIEW_BUNDLE.md](REVIEW_BUNDLE.md) for repo layout, important files, and one-command smoke test (`python tools/smoke_test.py`).
+See [REVIEW_BUNDLE_EN.md](REVIEW_BUNDLE_EN.md) for repo layout, important files, and one-command smoke test (`python tools/smoke_test.py`).
 
 ---
 
@@ -251,9 +248,9 @@ Apache-2.0 License — See LICENSE file for details.
 
 See the GitHub repository to open issues and submit PRs.
 
-**Contact**: mucahit.muzaffer@gmail.com
+**Contact**: See repository maintainer / SECURITY.md for reporting.
 
-**Security**: Please use the private channel for security vulnerability reports (specified in USAGE_POLICY.md).
+**Security**: Report vulnerabilities as specified in SECURITY.md and USAGE_POLICY.md.
 
 ---
 

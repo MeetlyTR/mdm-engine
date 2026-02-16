@@ -11,9 +11,10 @@ We release patches for security vulnerabilities. Which versions are eligible for
 
 ## Reporting a Vulnerability
 
-Please report security vulnerabilities privately to:
+Please report security vulnerabilities privately:
 
-**Email**: mucahit.muzaffer@gmail.com
+- **GitHub**: Use the repository's Security tab → "Report a vulnerability", or
+- **Maintainer**: See the maintainer contact in `pyproject.toml` (no direct email in repo).
 
 **Subject**: `[SECURITY] MDM Vulnerability Report`
 
@@ -94,11 +95,7 @@ Please report security vulnerabilities privately to:
 
 ## Security Contact
 
-For security-related questions or to report vulnerabilities:
-
-**Email**: mucahit.muzaffer@gmail.com
-
-**GitHub**: Use GitHub Security Advisory (for public issues after disclosure)
+For security-related questions or to report vulnerabilities use the repository's Security tab or the maintainer contact listed in `pyproject.toml`. Do not put direct email addresses in the repo.
 
 ---
 

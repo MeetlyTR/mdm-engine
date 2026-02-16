@@ -370,9 +370,15 @@ st.markdown("""
     /* Grafik başlığındaki bilgi (ℹ️) ikonunu mavi yap — sadece .chart-info-header içindekiler */
     .chart-info-header [data-testid="stExpander"] summary { color: #2563eb !important; }
     [data-theme="dark"] .chart-info-header [data-testid="stExpander"] summary { color: #60a5fa !important; }
-    /* Sidebar radio option text kontrast */
-    [data-testid="stSidebar"] div[role="radiogroup"] label span { color: #e2e8f0 !important; opacity: 1 !important; }
-    [data-testid="stSidebar"] div[role="radiogroup"] label { opacity: 1 !important; }
+    /* Sidebar radio: span veya p fark etmeksizin okunaklı; seçili olmayanlar da görünsün */
+    [data-testid="stSidebar"] div[role="radiogroup"] label span,
+    [data-testid="stSidebar"] div[role="radiogroup"] label p {
+      color: #e2e8f0 !important;
+    }
+    [data-testid="stSidebar"] div[role="radiogroup"] label {
+      color: #cbd5e1 !important;
+      opacity: 1 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 

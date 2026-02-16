@@ -118,8 +118,8 @@ If the adapter layer sends data in a format other than what MDM expects:
 - **Community Support**: Via GitHub Issues
 - **Best Effort**: Respond as quickly as possible
 - **No SLA**: No guaranteed response time
-- **Contact**: mucahit.muzaffer@gmail.com
-- **Security Contact**: For security vulnerabilities, please contact mucahit.muzaffer@gmail.com or use GitHub Security Advisory
+- **Contact**: See repository maintainer (pyproject.toml) or GitHub Discussions.
+- **Security Contact**: Use the repository Security tab or see SECURITY.md.
 
 ---
 
