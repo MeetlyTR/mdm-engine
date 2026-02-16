@@ -19,11 +19,8 @@ ALLOWED_ROOT = {
 }
 ALLOWED_CODE_DIRS = {"mdm_engine", "core", "config_profiles", "visualization", "tests"}
 ALLOWED_TOOLS = {"smoke_test.py", "make_review_bundle.py", "live_wiki_audit.py", "quick_wiki_test.py", "csv_export.py"}
-ALLOWED_DOCS = {
-    "L2_CASE_STUDIES.md", "PACKET_SCHEMA_V2.md", "QUICKSTART.md", "README.md",
-    "AUDIT_LEVELS_AND_PACKETS.md", "REPO_DOCS_POLICY.md",
-}
-ALLOWED_DOCS_IMAGES = True  # docs/images/ klasörü tamamen
+# docs/: no .md/.txt in repo; only images/ kept
+ALLOWED_DOCS_IMAGES = True
 
 
 def should_skip(p: Path) -> bool:
@@ -63,10 +60,8 @@ def allowed_in_bundle(rel: Path) -> bool:
     # examples/: tümü
     if top == "examples":
         return True
-    # docs/: sadece whitelist + images
+    # docs/: only images/ (all .md/.txt removed from repo)
     if top == "docs":
-        if len(parts) == 2:
-            return parts[1] in ALLOWED_DOCS or (parts[1] == "images")
         if len(parts) >= 2 and parts[1] == "images":
             return ALLOWED_DOCS_IMAGES
         return False

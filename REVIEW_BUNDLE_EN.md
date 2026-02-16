@@ -17,7 +17,7 @@ mdm-engine/
 ├── config_profiles/          # wiki_calibrated, scenario_test, etc.
 ├── tools/                    # live_wiki_audit, smoke_test, make_review_bundle, csv_export
 ├── visualization/            # Streamlit dashboard
-├── docs/                     # Schema, L2 case studies, specs (EN only in repo)
+├── docs/                     # Only docs/images/ (L2 screenshots); all .md/.txt are local only
 ├── examples/                 # sample_packets.jsonl, sample_mdm_audit.csv
 └── tests/
 ```
@@ -34,7 +34,7 @@ mdm-engine/
 | **mdm_engine/audit_spec.py** | Schema v2, CSV/JSONL export. |
 | **visualization/dashboard.py** | Streamlit: Review Queue, Live Monitor, Quality; Approve/Reject → review_log. |
 | **tools/live_wiki_audit.py** | EventStreams + ORES + MDM pipeline, evidence/diff fetch. |
-| **docs/L2_CASE_STUDIES.md** | L2 content examples (Suhrawardy, Pastoral); images in docs/images/. |
+| **docs/images/** | L2 example screenshots (Suhrawardy, Pastoral). All docs .md/.txt are local only, not in repo. |
 
 ---
 
@@ -56,7 +56,7 @@ Root: README.md, REVIEW_BUNDLE_EN.md, CHANGELOG.md, pyproject.toml, SECURITY.md,
 Code: mdm_engine/, core/, config_profiles/, visualization/, tests/.  
 Tools: smoke_test.py, make_review_bundle.py, live_wiki_audit.py, quick_wiki_test.py, csv_export.py.  
 Examples: examples/.  
-Docs: L2_CASE_STUDIES.md, images/, PACKET_SCHEMA_V2.md, QUICKSTART.md, README.md, AUDIT_LEVELS_AND_PACKETS.md.
+Docs: only docs/images/ (screenshots). All .md/.txt under docs/ are local only, not in repo.
 
 Internal and Turkish docs are **not** included in the zip.
 

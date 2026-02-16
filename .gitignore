@@ -78,46 +78,18 @@ Thumbs.db
 *.bak
 *.swp
 
-# --- Turkish and personal docs (not in public repo; keep locally only) ---
-# Turkish / personal .md
+# --- Root: working notes / internal (not in repo) ---
 /DURUM_DEGERLENDIRMESI.md
 /REBUILD_SUMMARY.md
 /PROJECT_REPORT.md
 /REPOSITORY_STRUCTURE.md
 /REVIEW_BUNDLE.md
-docs/GITHUB_YUKLEME_ADIMLARI.md
-docs/TAVSIYE_CSV_L0_KALIBRASYON_VE_MANTIK.md
-docs/TAVSIYE_DEGERLENDIRME_WIKI_CSV.md
-docs/CSV_KALIBRASYON_ALANLARI.md
-docs/AUDIT_CSV_1771059870_TAVSIYE.md
-docs/ADAPTER_VERI_ANALIZI.md
-docs/28_CANLI_VERI_VE_PILOT.md
-docs/ROADMAP_10_10.md
-docs/ACADEMIC_PRESENTATION.md
-docs/CORPORATE_PITCH.md
-docs/RESEARCH_BRIEF.md
-docs/EMAIL_TEMPLATES.md
-docs/BRANDING.md
-docs/DECIDE_FLOW_SSOT_AND_GAPS.md
-docs/ESCALATION_H_HIGH_PLAN.md
-docs/DASHBOARD_REFACTOR_PLAN.md
-docs/PYPI_LEGACY_NOTE.md
-docs/REASON_TERMINOLOGY.md
-docs/INVARIANTS_SCHEMA_METRICS.md
-docs/GOLDEN_EXAMPLE.md
-docs/images/README.md
-# Turkish / personal .txt and internal dirs
-docs/19_SYSTEM_CHECKUP_NOTLARI.txt
-docs/00_ARCHITECTURE_STATUS.txt
-docs/21_PHASE_63_64_7_ROADMAP.txt
-docs/14_DASHBOARD_NASIL_OKUNUR.txt
-docs/22_KULLANICI_SECIMLERI_VE_SONUCLAR.txt
-docs/23_TEK_TEST_RASGELE_SENARYOLAR.txt
-docs/24_VERI_INCELEME_SONUC.txt
-docs/25_TABLO_COCUK_ANLATIMI.txt
-docs/27_REALTIME_PROOF_STATUS.txt
-docs/18_DASHBOARD_DEMO_VS_OPTIMIZATION.txt
-docs/20_CHAOS_AND_CONFIG_PROFILES.txt
+
+# --- docs/: all .md and .txt removed from repo (keep locally only) ---
+docs/**/*.md
+docs/**/*.txt
+docs/*.md
+docs/*.txt
 docs/reports/
 docs/development/
 docs/releases/
