@@ -1,141 +1,71 @@
-# MDM Engine Integration Guide
+# Integration Guide — mdm-engine
 
-## Installation
+## Dependency
 
-```bash
-pip install mdm-engine
+Pin schema version:
+```toml
+dependencies = ["decision-schema>=0.1,<0.2"]
 ```
 
-Or from source:
-```bash
-pip install -e .
-```
-
-## Basic Usage
-
-### Running the Event Loop
+## Usage
 
 ```python
-from ami_engine.loop.run_loop import run_loop
-from ami_engine.adapters import MarketDataSource, Broker
-
-# Implement your adapters
-class MyMarketDataSource(MarketDataSource):
-    def next_event(self):
-        # Return event dict or None when exhausted
-        return {"mid": 0.5, "bid": 0.49, "ask": 0.51, ...}
-
-class MyBroker(Broker):
-    def submit_order(self, order):
-        # Submit order to exchange
-        pass
-
-# Run loop
-summary = run_loop(
-    source=MyMarketDataSource(),
-    broker=MyBroker(),
-    steps=100,
-    dry_run=False,
-)
-```
-
-### Using Private MDM Hook
-
-Create `ami_engine/mdm/_private/model.py`:
-
-```python
-from decision_schema.types import Proposal, Action
-
-def compute_proposal_private(features, **kwargs):
-    # Your proprietary MDM logic
-    confidence = compute_confidence(features)
-    return Proposal(
-        action=Action.ACT if confidence > 0.7 else Action.HOLD,
-        confidence=confidence,
-        reasons=["custom_model"],
-        params={"value": features.get("mid")},
-    )
-```
-
-The `DecisionEngine` will automatically use this if present.
-
-### Feature Extraction
-
-```python
+from decision_schema.compat import is_compatible, get_current_version
+from ami_engine.mdm.decision_engine import DecisionEngine
 from ami_engine.features.feature_builder import build_features
 
-features = build_features(
-    event={"mid": 0.5, "bid": 0.49, "ask": 0.51, ...},
-    mid_history=[0.49, 0.50, 0.51],
-    now_ms=1234567890,
-)
-# Returns: {"mid": 0.5, "spread_bps": 400, "depth": 100, ...}
+# Compatibility gate (fail-closed)
+v = get_current_version()
+if not is_compatible(v, expected_major=0, min_minor=1, max_minor=1):
+    raise RuntimeError("Incompatible decision-schema version (fail-closed).")
+
+# Build features from generic event
+event = {
+    "value": 0.5,
+    "timestamp_ms": 1000,
+    "metadata": {"source": "sensor_1"},
+}
+features = build_features(event, history=[], ...)
+
+# Generate proposal
+mdm = DecisionEngine(confidence_threshold=0.5)
+proposal = mdm.propose(features)
+
+# proposal is a Proposal type from decision-schema
+print(f"Action: {proposal.action}, Confidence: {proposal.confidence}")
 ```
 
-### Integration with Decision Schema
+## Adapter boundary
 
-MDM Engine outputs `Proposal` (from `decision-schema`):
+Adapters may transform domain inputs into `state`/`context`, but mdm-engine must remain domain-agnostic.
 
-```python
-from decision_schema.types import Proposal, Action
+## Telemetry
 
-proposal = Proposal(
-    action=Action.ACT,
-    confidence=0.8,
-    reasons=["signal_detected"],
-    params={"value": 100},
-)
-```
+All traces must be emitted as `PacketV2`. No parallel trace schemas in core paths.
 
-### Optional: Integration with DMC
-
-For risk-aware decision modulation, you can integrate `decision-modulation-core` (DMC) as an optional layer:
+## Integration with decision-modulation-core (optional)
 
 ```python
-from decision_modulation_core.dmc.modulator import modulate
-from decision_modulation_core.dmc.risk_policy import RiskPolicy
+from decision_schema.types import Proposal, Action, FinalDecision
+from dmc_core.dmc.modulator import modulate
+from dmc_core.dmc.risk_policy import RiskPolicy
 
+proposal = mdm.propose(features)
+
+# Optional: Apply risk guards via DMC
 final_action, mismatch = modulate(proposal, RiskPolicy(), context)
+
+if mismatch.flags:
+    # Guards triggered - do not execute
+    return
+
+# Execute final_action
 ```
 
-**Note**: DMC is **optional**. MDM Engine depends only on `decision-schema`; DMC integration is a separate concern.
+## Private MDM Hook
 
-## Trace/Audit
+For domain-specific models:
 
-### PacketV2 Logging
-
-```python
-from ami_engine.trace.trace_logger import TraceLogger
-
-logger = TraceLogger(run_id="run_123", output_dir="./traces")
-logger.log_packet(packet_v2)
-```
-
-### Security Redaction
-
-```python
-from ami_engine.security.redaction import redact_secrets
-
-safe_dict = redact_secrets({"api_key": "secret123", "mid": 0.5})
-# Returns: {"api_key": "***REDACTED***", "mid": 0.5}
-```
-
-## Simulation (Testing)
-
-```python
-from ami_engine.sim.microstructure_sim import MicrostructureSim
-from ami_engine.sim.synthetic_source import SyntheticSource
-from ami_engine.sim.paper_broker import PaperBroker
-
-sim = MicrostructureSim(mid=0.5, spread=0.01)
-source = SyntheticSource(sim, num_events=100)
-broker = PaperBroker()
-
-summary = run_loop(source=source, broker=broker, steps=100)
-```
-
-## Configuration
-
-MDM Engine uses `decision-schema` types. No domain-specific configuration is required.
-
-For DMC integration, see `decision-modulation-core` documentation.
+1. Create `ami_engine/mdm/_private/model.py` (gitignored)
+2. Implement `compute_proposal_private(features: dict, **kwargs) -> Proposal`
+3. `DecisionEngine` will use it if present; otherwise falls back to reference

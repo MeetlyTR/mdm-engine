@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ami-engine"
 version = "0.1.0"
-description = "MDM Engine: Market Decision Model runtime with event loop, feature extraction, and reference MDM implementation"
+description = "MDM Engine: Decision Model runtime with event loop, feature extraction, and reference MDM implementation"
 requires-python = ">=3.11"
 dependencies = ["numpy>=1.24", "decision-schema>=0.1,<0.2"]
 

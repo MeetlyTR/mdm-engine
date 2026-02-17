@@ -1,87 +1,63 @@
-# MDM Engine Formulas
+# Formulas — mdm-engine
 
-## Feature Extraction
+Let x_t be a state vector extracted from raw inputs at time t.
 
-### Basic Features
-
-```
-mid = (best_bid + best_ask) / 2
-spread = ask - bid
-spread_bps = 10000 * spread / max(mid, epsilon)
-depth = sum(top_N_bids) + sum(top_N_asks)
-imbalance = (sum(bids) - sum(asks)) / (sum(bids) + sum(asks))
-```
-
-### Advanced Features
+## Proposal scoring
 
 ```
-microprice = (bid * sum(asks) + ask * sum(bids)) / (sum(bids) + sum(asks))
-vwap = sum(price_i * qty_i) / sum(qty_i)  # Over top N levels
-pressure = (bid_depth - ask_depth) / (bid_depth + ask_depth)
-sigma = std(Δmid)  # Rolling window
-sigma_spike_z = (sigma_current - sigma_mean) / sigma_std
-cost_ticks = spread_ticks / 2  # Approximate cost
+s_t = f_theta(x_t, c_t)
 ```
 
-### Regime Features (5-minute rolling)
+Where:
+- `s_t` is a real-valued score (or score vector)
+- `c_t` is context (non-domain, operational metadata)
+- `f_theta` is a deterministic function under a given profile
+
+## Confidence
 
 ```
-sigma_5m = std(Δmid) over 5-minute window
-spread_med_5m = median(spread_bps) over 5-minute window
-depth_p10_5m = 10th percentile(depth) over 5-minute window
+conf_t = sigma(s_t)   (e.g., sigmoid/softmax depending on action space)
 ```
 
-## Reference MDM Scoring
+## Invariants
 
-### Logistic Confidence Score
+- `conf_t ∈ [0, 1]`
+- `propose(x_t, c_t)` is deterministic for fixed inputs and profile
+- exceptions => fail-closed proposal (`Action.HOLD` or `Action.STOP`)
 
-```
-signal = w1 * imbalance + w2 * pressure + w3 * (sigma_spike_z < threshold)
-confidence = sigmoid(signal) = 1 / (1 + exp(-signal))
-```
+## Feature extraction (generic)
 
-If `confidence >= min_confidence_threshold` AND signal strength exceeds threshold:
-- Action = `ACT`
-- Parameters clamped to policy limits (e.g., `max_value`)
-
-Otherwise:
-- Action = `HOLD`
-
-### Reference Position Manager
+Features are extracted from event dictionaries:
 
 ```
-if position_exists:
-    if realized_pnl >= take_profit_ticks:
-        action = EXIT
-    elif realized_pnl <= -stop_loss_ticks:
-        action = EXIT
-    elif time_in_position_ms >= max_time_in_position_ms:
-        action = EXIT
+x_t = extract_features(event_t, history_t)
 ```
 
-## Latency Metrics
+Where:
+- `event_t`: Generic event dictionary (timestamp, values, metadata)
+- `history_t`: Historical events for rolling statistics
+- `x_t`: Feature vector (numeric values)
+
+## Latency metrics
 
 ```
 latency_ms = now_ms - event_ts_ms
 feature_latency_ms = feature_end_ts - event_ts_ms
 mdm_latency_ms = mdm_end_ts - feature_end_ts
-dmc_latency_ms = dmc_end_ts - mdm_end_ts
-execution_latency_ms = execution_end_ts - dmc_end_ts
 ```
 
-## Trace Packet
+## Trace packet
 
 ```
 PacketV2(
-    packet_version="2",
-    schema_version="0.1.0",
     run_id=run_id,
     step=step,
-    input=event_dict,
-    external=context_dict,
+    input=event_dict,  # Redacted
+    external=context_dict,  # Redacted
     mdm=proposal_dict,
     final_action=final_decision_dict,
     latency_ms=total_latency_ms,
     mismatch=mismatch_info_dict if any,
+    schema_version="0.1.0",
 )
 ```

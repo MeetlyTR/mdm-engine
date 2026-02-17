@@ -1,69 +1,30 @@
-# MDM Engine
+# mdm-engine (Proposal Generation Runtime)
 
-**MDM Engine** is a runtime system for **Model Decision Models** (MDM). It provides event loop orchestration, feature extraction, reference MDM implementation, and trace/audit capabilities.
+`mdm-engine` generates **domain-agnostic proposals**: given a state/context snapshot, it produces a `decision_schema.types.Proposal` plus an optional `PacketV2` trace.
+This repository is part of the **multi-core decision ecosystem** (contract-first; cores depend only on `decision-schema`).
 
-## Domain-Agnostic Guarantee
+## What it does
 
-MDM Engine is designed to work across **any domain** that requires proposal generation:
+- Computes a candidate action and confidence as a `Proposal`
+- Emits trace telemetry via `PacketV2`
+- Supports configurable profiles (thresholds/weights) without hard-coding external services
 
-- ✅ **No domain-specific logic**: Feature extraction and proposal generation are generic
-- ✅ **Generic interfaces**: Adapters (`DataSource`, `Broker`) work for any domain
-- ✅ **Flexible features**: Feature builder accepts generic event dictionaries
-- ✅ **Contract-first**: Uses `decision-schema` for type contracts (domain-agnostic)
-- ✅ **Private hook pattern**: Domain-specific models go in `_private/` (gitignored)
-- ✅ **Trace/audit**: PacketV2 tracing works for any decision pipeline
+## What it does NOT do
 
-## What MDM Engine Does
+- It does not encode domain policy. Domain semantics must live in an adapter layer.
+- It does not require any specific external platform/service.
 
-MDM Engine provides:
-- **Event Loop**: Orchestrates proposal generation → (optional DMC modulation) → execution flow
-- **Feature Extraction**: Builds features from event data (generic event dictionaries)
-- **Reference MDM**: Simple explainable scoring model (logistic/linear) for demonstration
-- **Adapters**: Generic interfaces for data sources and executors
-- **Trace/Audit**: Logging and security utilities (redaction)
+## Integration (contract-first)
 
-## What MDM Engine Is NOT
+- **Input**: `state: dict`, `context: dict`
+- **Output**: `Proposal` (+ `PacketV2`)
 
-- **Not DMC**: MDM Engine generates proposals; DMC modulates them (see `decision-modulation-core`)
-- **Not domain-specific**: No domain-specific adapters or implementations
-- **Not an execution engine**: No order management, position management, or execution logic beyond interfaces
-- **Not a strategy**: Reference MDM is for demonstration; use private hook for production models
+See `docs/INTEGRATION_GUIDE.md`.
 
-## Use Cases
+## Example domains (quarantined)
 
-MDM Engine enables proposal generation in various domains:
-
-### 1. Content Moderation Pipeline
-- **Event**: Content submission (text, image, video)
-- **Features**: ML model scores, metadata, user history
-- **Proposal**: Moderate/flag/approve with confidence
-- **Execution**: Apply moderation action or queue for review
-
-### 2. Robotics Control System
-- **Event**: Sensor readings (camera, lidar, IMU)
-- **Features**: Obstacle distance, battery level, velocity
-- **Proposal**: Move/stop/rotate with confidence
-- **Execution**: Send command to robot actuators
-
-### 3. Resource Allocation System
-- **Event**: Resource request (compute, storage, bandwidth)
-- **Features**: Current utilization, demand patterns, priority
-- **Proposal**: Allocate/reject with confidence
-- **Execution**: Allocate resources or queue request
-
-### 4. API Rate Limiting & Quota Management
-- **Event**: API request (endpoint, user, timestamp)
-- **Features**: Request rate, quota usage, error rate
-- **Proposal**: Allow/throttle/deny with confidence
-- **Execution**: Process request or return rate-limit response
-
-### 5. Trading/Financial Markets (Optional)
-- **Event**: Market data (prices, order book, trades)
-- **Features**: Microstructure features (spread, depth, imbalance)
-- **Proposal**: Execute trade with confidence
-- **Execution**: Submit order to exchange
-
-See `docs/examples/` for domain-specific examples.
+All platform-specific demos (e.g., any single-site or single-provider integrations) are documented under:
+- `docs/examples/` (explicitly **Example domain only**)
 
 ## Core Components
 

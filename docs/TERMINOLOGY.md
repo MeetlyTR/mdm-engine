@@ -2,21 +2,21 @@
 
 ## Core Concepts
 
-### MDM (Market Decision Model)
+### MDM (Model Decision Model / Decision Model)
 
-A model that generates **action proposals** from market features:
-- Input: Market features (mid, spread, depth, imbalance, etc.)
-- Output: `TradeProposal` (action, confidence, reasons, quotes, size)
+A model that generates **action proposals** from features:
+- Input: Features (numeric values, signals, state information, etc.)
+- Output: `Proposal` (action, confidence, reasons, parameters)
 
 MDM Engine provides a **reference implementation** (simple logistic scoring). Production MDMs should use the private hook.
 
 ### DMC (Decision Modulation Core)
 
 A risk-aware decision layer that modulates MDM proposals:
-- Input: `TradeProposal` + context + risk policy
-- Output: `FinalAction` + `MismatchInfo`
+- Input: `Proposal` + context + risk policy
+- Output: `FinalDecision` + `MismatchInfo`
 
-DMC applies guards (staleness, liquidity, exposure, etc.) and may override proposals to HOLD/FLATTEN/CANCEL_ALL/STOP.
+DMC applies guards (staleness, rate limits, exposure, etc.) and may override proposals to HOLD/EXIT/CANCEL/STOP.
 
 See `decision-modulation-core` repository for DMC documentation.
 
@@ -34,13 +34,15 @@ When DMC overrides a proposal, it sets mismatch flags and reason codes explainin
 
 ### Features
 
-Market microstructure features extracted from order book snapshots:
-- Basic: mid, spread, depth, imbalance
-- Advanced: microprice, VWAP, pressure, sigma, sigma_spike_z
+Features extracted from event data (generic event dictionaries):
+- Basic: numeric values, timestamps, counts
+- Advanced: aggregations, rolling statistics, derived metrics
+
+See `docs/examples/` for domain-specific feature extraction examples.
 
 ### Event
 
-A market data snapshot (order book, timestamp, etc.) from `MarketDataSource`.
+A data snapshot (timestamp, values, metadata, etc.) from `DataSource`.
 
 ### Trace
 
@@ -61,11 +63,13 @@ Security audit logs written to `security_audit.jsonl` containing:
 
 ## Action Types
 
-- **QUOTE**: Submit bid/ask quotes
-- **FLATTEN**: Close position (cancel orders + close)
+- **ACT**: Execute action (domain-specific interpretation)
+- **EXIT**: Exit current state/position
 - **HOLD**: Do nothing
-- **CANCEL_ALL**: Cancel all orders
-- **STOP**: Stop trading (cancel all + stop)
+- **CANCEL**: Cancel pending actions
+- **STOP**: Stop execution (emergency stop)
+
+**Note**: Deprecated actions `QUOTE`, `FLATTEN`, `CANCEL_ALL` are aliases for generic actions. See `decision-schema` for details.
 
 ## Guard Types
 
@@ -73,29 +77,31 @@ See `decision-modulation-core/docs/GUARDS_AND_FORMULAS.md` for complete list.
 
 Common guards:
 - Staleness: Reject stale data
-- Liquidity: Require minimum depth
-- Spread: Reject wide spreads
-- Exposure: Limit total USD exposure
-- Inventory: Limit absolute inventory
-- Cancel Rate: Throttle on high cancel rate
+- Rate Limit: Throttle when rate exceeds limit
+- Error Budget: Stop when error rate exceeds threshold
+- Exposure: Limit total exposure/resource usage
+- Cooldown: Enforce cooldown periods after failures
+- Latency: Reject when latency exceeds threshold
 - Daily Loss: Stop after loss threshold
-- Adverse Selection: Monitor fill quality
+- Drawdown: Stop when drawdown exceeds threshold
 
 ## Interfaces
 
-### MarketDataSource
+### DataSource
 
-Abstract interface for market events:
+Abstract interface for event streams:
 - `next_event() -> dict | None`: Get next event or None if exhausted
 
-### Broker
+### Executor
 
-Abstract interface for order execution:
-- `get_state() -> dict`: Get broker state (cash, positions, exposure)
-- `submit_order(...) -> dict`: Submit order
-- `cancel_order(order_id) -> bool`: Cancel order
-- `cancel_all(market_id) -> int`: Cancel all orders
-- `process_fills(now_ms) -> list[dict]`: Get fill events
+Abstract interface for action execution:
+- `get_state() -> dict`: Get executor state (resources, positions, exposure)
+- `execute_action(...) -> dict`: Execute action
+- `cancel_action(action_id) -> bool`: Cancel action
+- `cancel_all(resource_id) -> int`: Cancel all actions
+- `process_results(now_ms) -> list[dict]`: Get execution results
+
+**Note**: Domain-specific implementations (e.g., trading exchanges) should implement these interfaces. See `docs/examples/` for domain-specific adapter examples.
 
 ## Reference vs Private
 
