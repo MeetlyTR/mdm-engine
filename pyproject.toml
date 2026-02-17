@@ -3,9 +3,9 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ami-engine"
+name = "mdm-engine"
 version = "0.1.0"
-description = "MDM Engine: Decision Model runtime with event loop, feature extraction, and reference MDM implementation"
+description = "Proposal generation runtime (contract-first; domain-agnostic). Produces decision_schema.types.Proposal from state/context."
 requires-python = ">=3.11"
 dependencies = ["numpy>=1.24", "decision-schema>=0.2,<0.3"]
 
@@ -14,4 +14,4 @@ dev = ["pytest>=7", "ruff"]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["ami_engine*"]
+include = ["mdm_engine*"]

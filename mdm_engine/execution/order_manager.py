@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from ami_engine.adapters.base import Broker
+from mdm_engine.adapters.base import Broker
 
 
 @dataclass

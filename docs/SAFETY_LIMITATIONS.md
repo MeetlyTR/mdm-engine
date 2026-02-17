@@ -52,7 +52,7 @@ The reference MDM (`reference_model.py`) is a **demonstration**. It uses simple 
 
 1. **Use with DMC**: MDM Engine should be used with DMC for risk management
 2. **Implement adapters**: Provide `DataSource` and `Executor` implementations for your domain
-3. **Use private MDM hook**: Implement proprietary MDM in `ami_engine/mdm/_private/`
+3. **Use private MDM hook**: Implement proprietary MDM in `mdm_engine/mdm/_private/`
 4. **Monitor traces**: Use `traces.jsonl` and `security_audit.jsonl` for debugging
 5. **Test thoroughly**: Test with simulation before live execution
 

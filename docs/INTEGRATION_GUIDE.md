@@ -11,8 +11,8 @@ dependencies = ["decision-schema>=0.1,<0.2"]
 
 ```python
 from decision_schema.compat import is_compatible, get_current_version
-from ami_engine.mdm.decision_engine import DecisionEngine
-from ami_engine.features.feature_builder import build_features
+from mdm_engine.mdm.decision_engine import DecisionEngine
+from mdm_engine.features.feature_builder import build_features
 
 # Compatibility gate (fail-closed)
 v = get_current_version()
@@ -66,6 +66,6 @@ if mismatch.flags:
 
 For domain-specific models:
 
-1. Create `ami_engine/mdm/_private/model.py` (gitignored)
+1. Create `mdm_engine/mdm/_private/model.py` (gitignored)
 2. Implement `compute_proposal_private(features: dict, **kwargs) -> Proposal`
 3. `DecisionEngine` will use it if present; otherwise falls back to reference

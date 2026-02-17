@@ -1,4 +1,4 @@
-"""INVARIANT 2: ami_engine must not import dmc_core, ops_health_core, eval_calibration_core."""
+"""INVARIANT 2: mdm_engine must not import dmc_core, ops_health_core, eval_calibration_core."""
 
 import ast
 from pathlib import Path
@@ -8,7 +8,7 @@ FORBIDDEN = {"dmc_core", "ops_health_core", "eval_calibration_core"}
 
 def test_invariant_2_no_cross_core_imports() -> None:
     root = Path(__file__).resolve().parent.parent
-    pkg = root / "ami_engine"
+    pkg = root / "mdm_engine"
     if not pkg.is_dir():
         return
     violations = []

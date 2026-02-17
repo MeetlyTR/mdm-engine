@@ -31,8 +31,13 @@ def test_schema_compatibility() -> None:
 
 
 def test_backward_compat_aliases() -> None:
-    """Verify backward compatibility aliases work."""
-    # Action aliases
-    assert Action.QUOTE == Action.ACT
-    assert Action.FLATTEN == Action.EXIT
-    assert Action.CANCEL_ALL == Action.CANCEL
+    """Verify core Action values and optional backward-compat aliases if present."""
+    assert Action.ACT.value == "ACT"
+    assert Action.HOLD.value == "HOLD"
+    # Optional legacy aliases (schema 0.2+ may only expose generic actions)
+    if hasattr(Action, "QUOTE"):
+        assert Action.QUOTE == Action.ACT
+    if hasattr(Action, "FLATTEN"):
+        assert Action.FLATTEN == Action.EXIT
+    if hasattr(Action, "CANCEL_ALL"):
+        assert Action.CANCEL_ALL == Action.CANCEL

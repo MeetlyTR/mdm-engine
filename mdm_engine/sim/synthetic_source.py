@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from ami_engine.adapters.base import MarketDataSource
-from ami_engine.sim.microstructure_sim import MicrostructureSim
+from mdm_engine.adapters.base import MarketDataSource
+from mdm_engine.sim.microstructure_sim import MicrostructureSim
 
 
 class SyntheticSource(MarketDataSource):

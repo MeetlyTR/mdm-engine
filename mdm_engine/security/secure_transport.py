@@ -1,7 +1,7 @@
 """Wrapper for HTTP/WS: enforces rate limit, backoff, redaction. Stub for SIM."""
 
-from ami_engine.security.rate_limit import RateLimiter, backoff_with_jitter
-from ami_engine.security.redaction import redact_dict
+from mdm_engine.security.rate_limit import RateLimiter, backoff_with_jitter
+from mdm_engine.security.redaction import redact_dict
 
 
 class SecureTransport:

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 from decision_schema.packet_v2 import PacketV2
-from ami_engine.trace.trace_logger import TraceLogger
+from mdm_engine.trace.trace_logger import TraceLogger
 
 
 def test_trace_logger_writes_jsonl():
@@ -17,8 +17,8 @@ def test_trace_logger_writes_jsonl():
             step=0,
             input={"ts": 1},
             external={"mid": 0.5},
-            mdm={"action": "QUOTE"},
-            final_action={"action": "QUOTE"},
+            mdm={"action": "ACT"},
+            final_action={"action": "ACT"},
             latency_ms=1,
             mismatch=None,
         )
@@ -26,4 +26,4 @@ def test_trace_logger_writes_jsonl():
         logger.close()
         content = (run_dir / "traces.jsonl").read_text()
         assert "r1" in content
-        assert "QUOTE" in content
+        assert "ACT" in content

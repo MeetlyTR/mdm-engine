@@ -24,7 +24,7 @@ Proposal -> decision-modulation-core -> FinalDecision -> PacketV2
 
 ## Components
 
-### 1. Proposal Generation (`ami_engine/mdm/decision_engine.py`)
+### 1. Proposal Generation (`mdm_engine/mdm/decision_engine.py`)
 
 **Function**: `propose(features: dict, context: dict) -> Proposal`
 
@@ -32,7 +32,7 @@ Proposal -> decision-modulation-core -> FinalDecision -> PacketV2
 - Computes confidence score
 - Returns `Proposal` conforming to `decision-schema`
 
-### 2. Feature Extraction (`ami_engine/features/feature_builder.py`)
+### 2. Feature Extraction (`mdm_engine/features/feature_builder.py`)
 
 **Function**: `build_features(event: dict, history: list, ...) -> dict`
 
@@ -40,7 +40,7 @@ Proposal -> decision-modulation-core -> FinalDecision -> PacketV2
 - Computes aggregations and rolling statistics
 - Domain-agnostic feature extraction
 
-### 3. Event Loop (`ami_engine/loop/run_loop.py`)
+### 3. Event Loop (`mdm_engine/loop/run_loop.py`)
 
 **Function**: `run_loop(source, executor, ...) -> dict`
 
@@ -48,7 +48,7 @@ Proposal -> decision-modulation-core -> FinalDecision -> PacketV2
 - Emits `PacketV2` traces
 - Returns summary statistics
 
-### 4. Adapters (`ami_engine/adapters/`)
+### 4. Adapters (`mdm_engine/adapters/`)
 
 Generic interfaces:
 - `DataSource`: Abstract interface for event streams
@@ -56,7 +56,7 @@ Generic interfaces:
 
 Domain-specific implementations must be provided by users.
 
-### 5. Trace/Audit (`ami_engine/trace/`, `ami_engine/security/`)
+### 5. Trace/Audit (`mdm_engine/trace/`, `mdm_engine/security/`)
 
 - `TraceLogger`: Writes PacketV2 to JSONL
 - `AuditLogger`: Security audit logs
@@ -65,6 +65,6 @@ Domain-specific implementations must be provided by users.
 ## Private Hook Pattern
 
 Domain-specific models can be implemented via private hook:
-- Create `ami_engine/mdm/_private/model.py` (gitignored)
+- Create `mdm_engine/mdm/_private/model.py` (gitignored)
 - Implement `compute_proposal_private(features: dict, **kwargs) -> Proposal`
 - `DecisionEngine` will use it if present; otherwise falls back to reference

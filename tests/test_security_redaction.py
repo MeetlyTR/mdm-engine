@@ -1,7 +1,7 @@
 """Redaction: no secrets in output."""
 
 import pytest
-from ami_engine.security.redaction import redact_dict
+from mdm_engine.security.redaction import redact_dict
 
 
 def test_redact_dict_removes_api_key():

@@ -51,7 +51,7 @@ def compute_proposal_reference(
     
     # Decide action
     if confidence >= confidence_threshold and abs(imbalance) >= imbalance_threshold:
-        action = Action.QUOTE  # Backward compat: QUOTE -> ACT
+        action = Action.ACT
         # Simple quote: mid ± spread/4
         spread = features.get("spread", 0.02)
         bid_quote = mid - spread / 4.0
@@ -70,13 +70,13 @@ def compute_proposal_reference(
 
 def compute_proposal_private(features: dict[str, Any], **kwargs) -> TradeProposal | None:
     """
-    Private model hook: import from ami_engine.mdm._private.model if exists.
+    Private model hook: import from mdm_engine.mdm._private.model if exists.
     
     Returns None if private model not available (falls back to reference).
     On runtime exception: fail-closed (returns safe HOLD proposal).
     """
     try:
-        from ami_engine.mdm._private.model import compute_proposal_private as _private_compute
+        from mdm_engine.mdm._private.model import compute_proposal_private as _private_compute
         return _private_compute(features, **kwargs)
     except ImportError:
         # Private hook not available - silent fallback (expected)

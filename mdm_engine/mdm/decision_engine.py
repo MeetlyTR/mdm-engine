@@ -5,14 +5,14 @@ from __future__ import annotations
 from typing import Any
 
 from decision_schema.types import Proposal as TradeProposal
-from ami_engine.mdm.reference_model import compute_proposal_reference, compute_proposal_private
+from mdm_engine.mdm.reference_model import compute_proposal_reference, compute_proposal_private
 
 
 class DecisionEngine:
     """
     MDM Decision Engine: generates proposals from features.
     
-    Uses private model hook if available (ami_engine.mdm._private.model.compute_proposal_private),
+    Uses private model hook if available (mdm_engine.mdm._private.model.compute_proposal_private),
     otherwise falls back to reference implementation.
     """
     

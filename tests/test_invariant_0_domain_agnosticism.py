@@ -1,7 +1,7 @@
 """
 INVARIANT 0: Domain-agnosticism in public surface (README + docs only).
 
-Scans README.md and docs/ (excluding docs/examples). Package code (ami_engine) may
+Scans README.md and docs/ (excluding docs/examples). Package code (mdm_engine) may
 contain domain terms until full quarantine; this test locks doc drift.
 """
 

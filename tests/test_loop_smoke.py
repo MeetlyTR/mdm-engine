@@ -8,12 +8,12 @@ import pytest
 
 @pytest.mark.skip(reason="run_loop moved to docs/examples; core is propose-only")
 def test_loop_smoke():
-    from ami_engine.sim.microstructure_sim import MicrostructureSim
-    from ami_engine.sim.synthetic_source import SyntheticSource
-    from ami_engine.sim.paper_broker import PaperBroker
-    from ami_engine.loop.run_loop import run_loop
-    from ami_engine.mdm.decision_engine import DecisionEngine
-    from ami_engine.mdm.position_manager import PositionManager
+    from mdm_engine.sim.microstructure_sim import MicrostructureSim
+    from mdm_engine.sim.synthetic_source import SyntheticSource
+    from mdm_engine.sim.paper_broker import PaperBroker
+    from mdm_engine.loop.run_loop import run_loop
+    from mdm_engine.mdm.decision_engine import DecisionEngine
+    from mdm_engine.mdm.position_manager import PositionManager
     from dmc_core.dmc.risk_policy import RiskPolicy
 
     with tempfile.TemporaryDirectory() as tmp:

@@ -34,7 +34,7 @@ event = {
 ## Feature Extraction
 
 ```python
-from ami_engine.features.feature_builder import build_features
+from mdm_engine.features.feature_builder import build_features
 
 features = build_features(event, history=[], ...)
 
@@ -50,7 +50,7 @@ features = build_features(event, history=[], ...)
 ## Proposal Generation
 
 ```python
-from ami_engine.mdm.decision_engine import DecisionEngine
+from mdm_engine.mdm.decision_engine import DecisionEngine
 from decision_schema.types import Action
 
 mdm = DecisionEngine(confidence_threshold=0.7)

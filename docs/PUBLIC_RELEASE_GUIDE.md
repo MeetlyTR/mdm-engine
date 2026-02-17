@@ -16,7 +16,7 @@ Checklist for making MDM Engine public-safe.
 ### Secrets and Security
 
 - [ ] Verify `.gitignore` includes: `.env*`, `*.local`, `*.secrets*`, `runs/`, `traces/`, `*.log`
-- [ ] Verify `ami_engine/mdm/_private/` is gitignored
+- [ ] Verify `mdm_engine/mdm/_private/` is gitignored
 - [ ] Check git history for secrets (see `SECURITY.md`)
 - [ ] Add `SECURITY.md` with warnings if history contains secrets
 - [ ] Verify no API keys, private keys, or credentials in code
@@ -42,16 +42,16 @@ Checklist for making MDM Engine public-safe.
 
 ### Reference MDM
 
-- [ ] `ami_engine/mdm/reference_model.py` is simple and explainable
-- [ ] `ami_engine/mdm/decision_engine.py` uses private hook if available
-- [ ] `ami_engine/mdm/position_manager.py` is reference only (basic TP/SL)
+- [ ] `mdm_engine/mdm/reference_model.py` is simple and explainable
+- [ ] `mdm_engine/mdm/decision_engine.py` uses private hook if available
+- [ ] `mdm_engine/mdm/position_manager.py` is reference only (basic TP/SL)
 
 ### Package Structure
 
 - [ ] `pyproject.toml` has correct name and description
 - [ ] Package structure matches target:
   ```
-  ami_engine/
+  mdm_engine/
     loop/
       run_loop.py
     adapters/

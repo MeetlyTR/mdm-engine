@@ -26,11 +26,11 @@ This repository is intended for public release. **No secrets, keys, or sensitive
 The `.gitignore` file includes:
 - `.env*`, `*.local`, `*.secrets*`
 - `runs/`, `traces/`, `*.log`
-- `ami_engine/mdm/_private/` (private hook directory)
+- `mdm_engine/mdm/_private/` (private hook directory)
 
 ### Redaction
 
-MDM Engine includes redaction utilities in `ami_engine.security.redaction`. Trace/audit logs should never include secrets. Test redaction behavior in `tests/test_security_redaction.py`.
+MDM Engine includes redaction utilities in `mdm_engine.security.redaction`. Trace/audit logs should never include secrets. Test redaction behavior in `tests/test_security_redaction.py`.
 
 ### Secret Scanning
 

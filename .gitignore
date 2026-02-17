@@ -58,4 +58,4 @@ htmlcov/
 Thumbs.db
 
 # Private MDM hook (gitignored by design)
-ami_engine/mdm/_private/
+mdm_engine/mdm/_private/

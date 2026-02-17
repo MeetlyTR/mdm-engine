@@ -42,12 +42,12 @@ All platform-specific demos (e.g., any single-site or single-provider integratio
 
 ## Components
 
-### 1. Reference MDM (`ami_engine/mdm/`)
+### 1. Reference MDM (`mdm_engine/mdm/`)
 
 - `decision_engine.py`: Glues features → proposal (uses private hook if available)
 - `reference_model.py`: Simple logistic scoring (demonstration)
 
-### 2. Feature Extraction (`ami_engine/features/feature_builder.py`)
+### 2. Feature Extraction (`mdm_engine/features/feature_builder.py`)
 
 Builds features from generic event dictionaries (numeric values, timestamps, aggregations).
 
@@ -55,7 +55,7 @@ Builds features from generic event dictionaries (numeric values, timestamps, agg
 
 Event loop and DMC integration: see `docs/examples/` for example integration (not part of core package).
 
-### 4. Adapters / Trace / Audit (`ami_engine/adapters/`, `ami_engine/trace/`, `ami_engine/security/`)
+### 4. Adapters / Trace / Audit (`mdm_engine/adapters/`, `mdm_engine/trace/`, `mdm_engine/security/`)
 
 - `TraceLogger`: Writes PacketV2 to JSONL
 - `AuditLogger`: Security audit logs
@@ -65,7 +65,7 @@ Event loop and DMC integration: see `docs/examples/` for example integration (no
 
 MDM Engine supports a private model hook:
 
-1. Create `ami_engine/mdm/_private/model.py` (gitignored)
+1. Create `mdm_engine/mdm/_private/model.py` (gitignored)
 2. Implement `compute_proposal_private(features: dict, **kwargs) -> Proposal`
 3. `DecisionEngine` will use it if present; otherwise falls back to reference
 
@@ -74,8 +74,8 @@ This allows proprietary MDM models without exposing them in public code.
 ## Quick Start
 
 ```python
-from ami_engine.mdm.decision_engine import DecisionEngine
-from ami_engine.features.feature_builder import build_features
+from mdm_engine.mdm.decision_engine import DecisionEngine
+from mdm_engine.features.feature_builder import build_features
 from decision_schema.types import Action
 
 # Build features from generic event
@@ -97,25 +97,25 @@ print(f"Action: {proposal.action}, Confidence: {proposal.confidence}")
 
 MDM Engine outputs `Proposal` (from `decision-schema` package). This is the **single source of truth** for type contracts.
 
-**Schema Dependency**: MDM Engine depends **only** on `decision-schema>=0.1,<0.2` for type contracts. This ensures compatibility across the multi-core ecosystem.
+**Schema Dependency**: MDM Engine depends **only** on `decision-schema>=0.2,<0.3` for type contracts. Compatibility check: `min_minor=2, max_minor=2`.
 
-**Optional DMC Integration**: For risk-aware decision modulation, you can integrate `decision-modulation-core` (DMC) as an optional layer:
+**Optional DMC Integration**: For risk-aware decision modulation, integrate `decision-modulation-core` (DMC) as an optional layer:
 
 ```python
 from decision_schema.types import Proposal, Action, FinalDecision
-from decision_modulation_core.dmc.modulator import modulate
-from decision_modulation_core.dmc.risk_policy import RiskPolicy
+from dmc_core.dmc.modulator import modulate
+from dmc_core.dmc.policy import GuardPolicy
 
 proposal = mdm.propose(features)
 
-# Optional: Apply risk guards via DMC
-final_action, mismatch = modulate(proposal, RiskPolicy(), context)
+# Optional: Apply guards via DMC (GuardPolicy)
+final_decision, mismatch = modulate(proposal, GuardPolicy(), context)
 
 if mismatch.flags:
     # Guards triggered - do not execute
     return
 
-# Execute final_action
+# Execute final_decision
 ```
 
 **Without DMC**: Proposals can be executed directly (no risk guards). This is suitable for testing or when risk management is handled elsewhere.

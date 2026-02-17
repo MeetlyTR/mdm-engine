@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ami_engine.adapters.base import Broker
+from mdm_engine.adapters.base import Broker
 from decision_schema.types import Action, FinalDecision as FinalAction
 
 
@@ -14,29 +14,29 @@ def execute(
     market_id: str,
     mid: float | None = None,
 ) -> dict[str, Any]:
-    """Execute final action: QUOTE -> submit bid/ask; FLATTEN -> cancel then close position + PnL."""
+    """Execute final action: ACT -> submit bid/ask; EXIT -> cancel then close; CANCEL -> cancel all."""
     result: dict[str, Any] = {"action": final_action.action.value, "orders": [], "cancels": 0}
-    if final_action.action == Action.QUOTE and final_action.bid_quote is not None and final_action.ask_quote is not None and final_action.size_usd:
+    if final_action.action == Action.ACT and getattr(final_action, "bid_quote", None) is not None and getattr(final_action, "ask_quote", None) is not None and getattr(final_action, "size_usd", None):
         broker.submit_order(
             market_id,
             "bid",
-            final_action.bid_quote,
-            final_action.size_usd,
-            final_action.post_only,
+            getattr(final_action, "bid_quote"),
+            getattr(final_action, "size_usd", 0),
+            getattr(final_action, "post_only", False),
         )
         broker.submit_order(
             market_id,
             "ask",
-            final_action.ask_quote,
-            final_action.size_usd,
-            final_action.post_only,
+            getattr(final_action, "ask_quote"),
+            getattr(final_action, "size_usd", 0),
+            getattr(final_action, "post_only", False),
         )
         result["orders"] = ["bid", "ask"]
-    elif final_action.action == Action.FLATTEN:
+    elif final_action.action == Action.EXIT:
         result["cancels"] = broker.cancel_all(market_id)
         if hasattr(broker, "flatten_position"):
             broker.flatten_position(market_id, mid)
-    elif final_action.action == Action.CANCEL_ALL:
+    elif final_action.action == Action.CANCEL:
         result["cancels"] = broker.cancel_all(market_id)
     elif final_action.action == Action.STOP:
         result["cancels"] = broker.cancel_all(None)
