@@ -18,7 +18,8 @@ PUBLIC_DOCS = ["README.md", "docs/"]
 # Proposal core only (adapters/execution/sim/features are example-domain or legacy)
 CODE_DIR = "mdm_engine/mdm"
 EXCLUDE_DOCS = [r"docs[/\\]examples[/\\]", r"docs[/\\]PUBLIC_RELEASE_GUIDE\.md", r"docs[/\\]TERMINOLOGY\.md", r"tests/.*"]
-EXCLUDE_CODE = [r"reference_model\.py$", r"position_manager\.py$"]  # compat shim; position manager is execution state (quarantine later)
+# position_manager.py excluded until quarantined (execution state has domain terms)
+EXCLUDE_CODE = [r"position_manager\.py$"]
 
 
 def _find_doc_files(repo_root: Path) -> list[Path]:
