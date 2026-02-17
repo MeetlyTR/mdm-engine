@@ -1,7 +1,7 @@
 """
 INVARIANT 0: Domain-agnosticism in public surface (docs + core code, examples excluded).
 
-Scans README.md, docs/ (excluding examples), and mdm_engine/ (excluding reference_model.py compat shim).
+Scans README.md, docs/ (excluding examples), and mdm_engine/mdm/*.py (excluding position_manager.py only).
 """
 
 import re
@@ -49,7 +49,7 @@ def _find_code_files(repo_root: Path) -> list[Path]:
         if any(re.search(pat, rel) for pat in EXCLUDE_CODE):
             continue
         files.append(f)
-    return files  # only mdm_engine/mdm/*.py (proposal core), excluding reference_model.py
+    return files  # mdm_engine/mdm/*.py, excluding position_manager.py only
 
 
 def test_invariant_0_docs_domain_agnostic() -> None:
@@ -70,7 +70,7 @@ def test_invariant_0_docs_domain_agnostic() -> None:
 
 
 def test_invariant_0_core_code_domain_agnostic() -> None:
-    """Proposal core (mdm_engine/mdm/, excluding reference_model.py compat shim) must not contain domain vocabulary."""
+    """Proposal core (mdm_engine/mdm/, exclude position_manager only) must not contain domain vocabulary."""
     repo_root = Path(__file__).resolve().parent.parent
     violations = []
     for f in _find_code_files(repo_root):
