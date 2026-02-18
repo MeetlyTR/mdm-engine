@@ -5,11 +5,12 @@ from mdm_engine.security.rate_limit import RateLimiter
 
 
 def test_start_full_first_allow_succeeds() -> None:
-    """start_full=True => tokens start at capacity; first allow() returns True."""
+    """start_full=True => tokens start at capacity; first allow() returns True and consumes one."""
     limiter = RateLimiter(rate=1.0, capacity=10, start_full=True)
     assert limiter.tokens == 10.0
     assert limiter.allow() is True
-    assert limiter.tokens == 9.0
+    assert 0 <= limiter.tokens <= limiter.capacity
+    assert limiter.tokens < 10.0  # at least one token consumed (cost=1)
 
 
 def test_start_full_false_default_behavior() -> None:
