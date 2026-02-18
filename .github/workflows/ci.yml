@@ -16,7 +16,9 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.11", "3.12"]
 
@@ -31,11 +33,11 @@ jobs:
           cache: pip
 
       - name: Install test tooling
-        run: pip install -U pip pytest build
+        run: pip install -U pip pytest build || (sleep 15 && pip install -U pip pytest build)
 
       - name: Install decision-schema (pinned, fallback to git)
         run: |
-          pip install "decision-schema>=0.2,<0.3" || pip install "git+https://github.com/MchtMzffr/decision-schema.git@main"
+          pip install "decision-schema>=0.2.2,<0.3" || (sleep 20 && pip install "decision-schema>=0.2.2,<0.3") || pip install "git+https://github.com/MchtMzffr/decision-schema.git@v0.2.2"
 
       - name: Install package
         run: pip install -e ".[dev]"
