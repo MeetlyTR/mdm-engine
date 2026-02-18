@@ -3,29 +3,33 @@
 ## Dependency
 
 Pin schema version:
+
 ```toml
-dependencies = ["decision-schema>=0.1,<0.2"]
+dependencies = ["decision-schema>=0.2,<0.3"]
 ```
 
 ## Usage
 
+Core API is domain-free: pass a **features dict** (e.g. state snapshot as generic keys) into `DecisionEngine.propose`. No bundled feature builder; use your adapter to build features or pass state through.
+
 ```python
 from decision_schema.compat import is_compatible, get_current_version
 from mdm_engine.mdm.decision_engine import DecisionEngine
-from mdm_engine.features.feature_builder import build_features
 
 # Compatibility gate (fail-closed)
 v = get_current_version()
-if not is_compatible(v, expected_major=0, min_minor=1, max_minor=1):
+if not is_compatible(v, expected_major=0, min_minor=2, max_minor=2):
     raise RuntimeError("Incompatible decision-schema version (fail-closed).")
 
-# Build features from generic event
-event = {
-    "value": 0.5,
-    "timestamp_ms": 1000,
-    "metadata": {"source": "sensor_1"},
+# State / context as features (passthrough; keys are domain-agnostic)
+features = {
+    "signal_0": 0.5,
+    "signal_1": 0.0,
+    "state_scalar_a": 120.0,
+    "state_scalar_b": 10.0,
 }
-features = build_features(event, history=[], ...)
+if "now_ms" in context:
+    features["now_ms"] = context["now_ms"]
 
 # Generate proposal
 mdm = DecisionEngine(confidence_threshold=0.5)
@@ -37,7 +41,7 @@ print(f"Action: {proposal.action}, Confidence: {proposal.confidence}")
 
 ## Adapter boundary
 
-Adapters may transform domain inputs into `state`/`context`, but mdm-engine must remain domain-agnostic.
+Adapters may transform domain inputs into `state`/`context` and then into a features dict. mdm-engine core remains domain-agnostic.
 
 ## Telemetry
 
@@ -48,18 +52,18 @@ All traces must be emitted as `PacketV2`. No parallel trace schemas in core path
 ```python
 from decision_schema.types import Proposal, Action, FinalDecision
 from dmc_core.dmc.modulator import modulate
-from dmc_core.dmc.risk_policy import RiskPolicy
+from dmc_core.dmc.policy import GuardPolicy
 
 proposal = mdm.propose(features)
 
-# Optional: Apply risk guards via DMC
-final_action, mismatch = modulate(proposal, RiskPolicy(), context)
+# Optional: Apply guards via DMC (GuardPolicy)
+final_decision, mismatch = modulate(proposal, GuardPolicy(), context)
 
 if mismatch.flags:
     # Guards triggered - do not execute
     return
 
-# Execute final_action
+# Execute final_decision
 ```
 
 ## Private MDM Hook
