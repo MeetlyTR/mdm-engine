@@ -47,19 +47,17 @@ All platform-specific demos (e.g., any single-site or single-provider integratio
 - `decision_engine.py`: Glues features → proposal (uses private hook if available)
 - `reference_model.py`: Simple logistic scoring (demonstration)
 
-### 2. Feature Extraction (`mdm_engine/features/feature_builder.py`)
+### 2. Features input (domain-free)
 
-Builds features from generic event dictionaries (numeric values, timestamps, aggregations).
+Core API accepts a **features dict** (e.g. generic keys: `signal_0`, `signal_1`, `state_scalar_*`). Build this in your adapter or pass state through; see `docs/INTEGRATION_GUIDE.md`.
 
 ### 3. Integration loop (example only)
 
 Event loop and DMC integration: see `docs/examples/` for example integration (not part of core package).
 
-### 4. Adapters / Trace / Audit (`mdm_engine/adapters/`, `mdm_engine/trace/`, `mdm_engine/security/`)
+### 4. Security (packaged: `mdm_engine/security/`)
 
-- `TraceLogger`: Writes PacketV2 to JSONL
-- `AuditLogger`: Security audit logs
-- `redaction`: Secret redaction utilities
+- Audit, redaction, rate-limit, signing utilities (see `mdm_engine/security/`)
 
 ## Private MDM Hook
 
@@ -75,16 +73,15 @@ This allows proprietary MDM models without exposing them in public code.
 
 ```python
 from mdm_engine.mdm.decision_engine import DecisionEngine
-from mdm_engine.features.feature_builder import build_features
 from decision_schema.types import Action
 
-# Build features from generic event
-event = {
-    "value": 0.5,
-    "timestamp_ms": 1000,
-    "metadata": {"source": "sensor_1"},
+# Domain-free features dict (e.g. state snapshot or adapter output)
+features = {
+    "signal_0": 0.5,
+    "signal_1": 0.0,
+    "state_scalar_a": 120.0,
+    "state_scalar_b": 10.0,
 }
-features = build_features(event, history=[], ...)
 
 # MDM proposal
 mdm = DecisionEngine(confidence_threshold=0.5)
@@ -106,6 +103,7 @@ from decision_schema.types import Proposal, Action, FinalDecision
 from dmc_core.dmc.modulator import modulate
 from dmc_core.dmc.policy import GuardPolicy
 
+# features: dict from your adapter or state
 proposal = mdm.propose(features)
 
 # Optional: Apply guards via DMC (GuardPolicy)
@@ -138,7 +136,7 @@ pip install -e .
 
 Or from git:
 ```bash
-pip install git+https://github.com/MeetlyTR/mdm-engine.git
+pip install git+https://github.com/MchtMzffr/mdm-engine.git
 ```
 
 ## Tests
