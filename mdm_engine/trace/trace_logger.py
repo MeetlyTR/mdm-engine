@@ -14,14 +14,14 @@ from decision_schema.packet_v2 import PacketV2
 class TraceLogger:
     """
     Append PacketV2 as JSONL (input/external must be pre-redacted).
-    
+
     Performance: Flushes every N writes (default: every write for safety, set flush_every_n for batch).
     """
 
     def __init__(self, run_dir: Path, flush_every_n: int = 1):
         """
         Initialize trace logger.
-        
+
         Args:
             run_dir: Directory for traces.jsonl
             flush_every_n: Flush every N writes (1 = flush every write, higher = batch flush)

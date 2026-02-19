@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 """RateLimiter: token bucket and start_full policy."""
 
-import pytest
 from mdm_engine.security.rate_limit import RateLimiter
 
 

@@ -2,6 +2,7 @@
 # Copyright (c) 2026 Mücahit Muzaffer Karafil (MchtMzffr)
 # SPDX-License-Identifier: MIT
 """CI-0: Workflow file hygiene — CR=0, LF>=10, no control/embedding Unicode, on:/jobs: line-addressable."""
+
 import re
 from pathlib import Path
 
@@ -31,17 +32,22 @@ def _contains_forbidden_unicode(text: str) -> list[str]:
 def test_invariant_ci_0_workflow_hygiene() -> None:
     assert WORKFLOW_DIR.exists(), f"{WORKFLOW_DIR} does not exist"
     workflow_files = sorted(
-        p for p in WORKFLOW_DIR.rglob("*") if p.is_file() and p.suffix in {".yml", ".yaml"}
+        p
+        for p in WORKFLOW_DIR.rglob("*")
+        if p.is_file() and p.suffix in {".yml", ".yaml"}
     )
     assert workflow_files, "No workflow YAML files found under .github/workflows"
     failures: list[str] = []
     for path in workflow_files:
         b = path.read_bytes()
         if b"\r" in b:
-            failures.append(f"{path}: contains CR bytes (count={b.count(b'\r')})")
+            cr_count = b.count(b"\r")
+            failures.append(f"{path}: contains CR bytes (count={cr_count})")
         lf = b.count(b"\n")
         if lf < MIN_EXPECTED_NEWLINES:
-            failures.append(f"{path}: too few LF newlines (count={lf}); possible single-line YAML")
+            failures.append(
+                f"{path}: too few LF newlines (count={lf}); possible single-line YAML"
+            )
         try:
             text = b.decode("utf-8")
         except UnicodeDecodeError as e:

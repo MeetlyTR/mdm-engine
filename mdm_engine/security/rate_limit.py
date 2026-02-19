@@ -47,7 +47,9 @@ class RateLimiter:
         return False
 
 
-def backoff_with_jitter(attempt: int, base_sec: float = 1.0, max_sec: float = 60.0) -> float:
+def backoff_with_jitter(
+    attempt: int, base_sec: float = 1.0, max_sec: float = 60.0
+) -> float:
     """Exponential backoff + jitter for 429/retries."""
     sec = min(max_sec, base_sec * (2**attempt))
     return sec * (0.5 + random.random() * 0.5)

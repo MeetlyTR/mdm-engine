@@ -2,6 +2,7 @@
 # Copyright (c) 2026 Mücahit Muzaffer Karafil (MchtMzffr)
 # SPDX-License-Identifier: MIT
 """PKG-1: docs/examples must not be included in the built wheel/sdist."""
+
 import subprocess
 import zipfile
 from pathlib import Path

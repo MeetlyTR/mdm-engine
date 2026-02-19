@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 from mdm_engine.adapters.base import Broker
@@ -66,12 +66,23 @@ class OrderManager:
         Replace only if |new - old| > min_requote_ticks * tick_size (or no previous quote).
         Use effective_refresh_ms when throttled (e.g. from DMC cancel_rate guard).
         """
-        refresh_ms = effective_refresh_ms if effective_refresh_ms is not None else self.refresh_ms
+        refresh_ms = (
+            effective_refresh_ms
+            if effective_refresh_ms is not None
+            else self.refresh_ms
+        )
         min_move = self.min_requote_ticks * self.tick_size
         skip_requote = False
         force_replace = self.order_stale(now_ms)
-        if self._last_bid is not None and self._last_ask is not None and not force_replace:
-            if abs(bid_quote - self._last_bid) < min_move and abs(ask_quote - self._last_ask) < min_move:
+        if (
+            self._last_bid is not None
+            and self._last_ask is not None
+            and not force_replace
+        ):
+            if (
+                abs(bid_quote - self._last_bid) < min_move
+                and abs(ask_quote - self._last_ask) < min_move
+            ):
                 skip_requote = True
             if (now_ms - self.last_refresh_ms) < refresh_ms:
                 skip_requote = True

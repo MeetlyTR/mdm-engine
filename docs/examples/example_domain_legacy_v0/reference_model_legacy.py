@@ -30,7 +30,7 @@ def compute_proposal_reference(
     depth_score = min(1.0, depth / 100.0)
     imbalance_score = abs(imbalance)
     spread_penalty = min(1.0, max(0.0, 1.0 - spread_bps / 1000.0))
-    raw_score = (depth_score * 0.4 + imbalance_score * 0.4 + spread_penalty * 0.2)
+    raw_score = depth_score * 0.4 + imbalance_score * 0.4 + spread_penalty * 0.2
     confidence = 1.0 / (1.0 + math.exp(-5.0 * (raw_score - 0.5)))
 
     reasons = []
@@ -47,7 +47,16 @@ def compute_proposal_reference(
             action=Action.ACT,
             confidence=confidence,
             reasons=reasons,
-            params={"bid_quote": mid - spread / 4.0, "ask_quote": mid + spread / 4.0, "size_usd": min(1.0, depth_score * 2.0)},
-            features_summary={"depth_score": depth_score, "imbalance_score": imbalance_score},
+            params={
+                "bid_quote": mid - spread / 4.0,
+                "ask_quote": mid + spread / 4.0,
+                "size_usd": min(1.0, depth_score * 2.0),
+            },
+            features_summary={
+                "depth_score": depth_score,
+                "imbalance_score": imbalance_score,
+            },
         )
-    return Proposal(action=Action.HOLD, confidence=confidence, reasons=reasons or ["low_confidence"])
+    return Proposal(
+        action=Action.HOLD, confidence=confidence, reasons=reasons or ["low_confidence"]
+    )

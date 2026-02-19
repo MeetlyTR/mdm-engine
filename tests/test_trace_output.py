@@ -6,7 +6,6 @@
 import tempfile
 from pathlib import Path
 
-import pytest
 from decision_schema.packet_v2 import PacketV2
 from mdm_engine.trace.trace_logger import TraceLogger
 

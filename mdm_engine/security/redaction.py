@@ -10,9 +10,19 @@ from typing import Any
 
 REDACT_KEYS = frozenset(
     {
-        "api_key", "apikey", "api-key", "secret", "password", "token",
-        "authorization", "auth", "private_key", "privatekey",
-        "signature", "raw_payload", "headers",
+        "api_key",
+        "apikey",
+        "api-key",
+        "secret",
+        "password",
+        "token",
+        "authorization",
+        "auth",
+        "private_key",
+        "privatekey",
+        "signature",
+        "raw_payload",
+        "headers",
     }
 )
 
@@ -26,7 +36,9 @@ def _normalized_key_set(keys: frozenset[str]) -> set[str]:
     return {re.sub(r"[-_\s]", "", x.lower()) for x in keys}
 
 
-def redact_dict(d: dict[str, Any], key_subset: frozenset[str] | None = None) -> dict[str, Any]:
+def redact_dict(
+    d: dict[str, Any], key_subset: frozenset[str] | None = None
+) -> dict[str, Any]:
     """Copy dict with sensitive keys replaced by [REDACTED]; case-insensitive match."""
     keys = key_subset or REDACT_KEYS
     norm_set = _normalized_key_set(keys)
@@ -42,7 +54,9 @@ def _redact_dict_impl(d: dict[str, Any], norm_set: set[str]) -> dict[str, Any]:
         elif isinstance(v, dict):
             out[k] = _redact_dict_impl(v, norm_set)
         elif isinstance(v, list):
-            out[k] = [_redact_dict_impl(x, norm_set) if isinstance(x, dict) else x for x in v]
+            out[k] = [
+                _redact_dict_impl(x, norm_set) if isinstance(x, dict) else x for x in v
+            ]
         else:
             out[k] = v
     return out

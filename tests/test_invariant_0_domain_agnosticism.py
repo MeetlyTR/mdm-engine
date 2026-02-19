@@ -12,15 +12,36 @@ import re
 from pathlib import Path
 
 FORBIDDEN_TERMS = {
-    "trade", "trading", "trader", "market", "orderbook",
-    "bid", "ask", "quote", "fill", "exchange", "portfolio",
-    "pnl", "slippage", "spread", "liquidity", "inventory",
-    "exposure", "drawdown", "flatten", "cancel_all",
+    "trade",
+    "trading",
+    "trader",
+    "market",
+    "orderbook",
+    "bid",
+    "ask",
+    "quote",
+    "fill",
+    "exchange",
+    "portfolio",
+    "pnl",
+    "slippage",
+    "spread",
+    "liquidity",
+    "inventory",
+    "exposure",
+    "drawdown",
+    "flatten",
+    "cancel_all",
 }
 
 PUBLIC_DOCS = ["README.md", "docs/"]
 CODE_DIRS = ["mdm_engine/mdm", "mdm_engine/security"]
-EXCLUDE_DOCS = [r"docs[/\\]examples[/\\]", r"docs[/\\]PUBLIC_RELEASE_GUIDE\.md", r"docs[/\\]TERMINOLOGY\.md", r"tests/.*"]
+EXCLUDE_DOCS = [
+    r"docs[/\\]examples[/\\]",
+    r"docs[/\\]PUBLIC_RELEASE_GUIDE\.md",
+    r"docs[/\\]TERMINOLOGY\.md",
+    r"tests/.*",
+]
 EXCLUDE_CODE: list[str] = []
 
 
@@ -36,7 +57,9 @@ def _find_doc_files(repo_root: Path) -> list[Path]:
             for f in path.rglob("*"):
                 if f.is_file() and f.suffix in (".md", ".rst", ".txt"):
                     rel = str(f.relative_to(repo_root)).replace("\\", "/")
-                    if not any(re.search(pat, rel, re.IGNORECASE) for pat in EXCLUDE_DOCS):
+                    if not any(
+                        re.search(pat, rel, re.IGNORECASE) for pat in EXCLUDE_DOCS
+                    ):
                         files.append(f)
     return files
 

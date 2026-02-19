@@ -3,8 +3,10 @@ name: CI
 on:
   push:
     branches: [main]
+    tags: ["v*"]
   pull_request:
     branches: [main]
+  workflow_dispatch: {}
 
 permissions:
   contents: read
@@ -26,6 +28,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Check LICENSE (INV-LIC-1)
+        run: test -f LICENSE || { echo "Missing root LICENSE"; exit 1; }
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -33,7 +38,13 @@ jobs:
           cache: pip
 
       - name: Install test tooling
-        run: pip install -U pip pytest build || (sleep 15 && pip install -U pip pytest build)
+        run: pip install -U pip pytest build pytest-json-report pytest-cov ruff || (sleep 15 && pip install -U pip pytest build pytest-json-report pytest-cov ruff)
+
+      - name: Ruff check
+        run: ruff check .
+
+      - name: Ruff format check
+        run: ruff format --check .
 
       - name: Install decision-schema (pinned, fallback to git)
         run: |
@@ -43,4 +54,25 @@ jobs:
         run: pip install -e ".[dev]"
 
       - name: Run tests
-        run: pytest tests/ -v
+        run: pytest tests/ -v --json-report --json-report-file=pytest-report.json --cov=. --cov-report=term-missing --no-cov-on-fail
+
+      - name: Upload pytest report
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-report-${{ matrix.python-version }}
+          path: pytest-report.json
+
+      - name: Write test summary
+        run: |
+          python - <<'PY'
+          import json, os
+          r = json.load(open("pytest-report.json", "r", encoding="utf-8"))
+          s = r.get("summary", {})
+          passed = s.get("passed", 0); failed = s.get("failed", 0); skipped = s.get("skipped", 0); total = s.get("total", 0)
+          line = f"pytest: total={total} passed={passed} failed={failed} skipped={skipped}"
+          print(line)
+          sp = os.environ.get("GITHUB_STEP_SUMMARY")
+          if sp:
+              with open(sp, "a", encoding="utf-8") as f:
+                  f.write(line + "\n")
+          PY

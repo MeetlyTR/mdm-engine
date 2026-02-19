@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 import random
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 @dataclass
@@ -52,7 +52,13 @@ class MicrostructureSim:
             ask = bid + self.tick_size
         bid_depth = max(10.0, 100.0 + self.rng.gauss(0, 20))
         ask_depth = max(10.0, 100.0 + self.rng.gauss(0, 20))
-        return BookSnapshot(bid=bid, ask=ask, bid_depth=bid_depth, ask_depth=ask_depth, ts_ms=self._ts_ms)
+        return BookSnapshot(
+            bid=bid,
+            ask=ask,
+            bid_depth=bid_depth,
+            ask_depth=ask_depth,
+            ts_ms=self._ts_ms,
+        )
 
     def try_fill(
         self,

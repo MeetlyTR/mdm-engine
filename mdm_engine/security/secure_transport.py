@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: MIT
 """Wrapper for HTTP/WS: enforces rate limit, backoff, redaction. Stub for SIM."""
 
-from mdm_engine.security.rate_limit import RateLimiter, backoff_with_jitter
+from mdm_engine.security.rate_limit import RateLimiter
 from mdm_engine.security.redaction import redact_dict
 
 

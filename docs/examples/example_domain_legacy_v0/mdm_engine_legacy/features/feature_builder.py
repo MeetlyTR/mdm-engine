@@ -2,7 +2,7 @@
 # Copyright (c) 2026 Mücahit Muzaffer Karafil (MchtMzffr)
 # SPDX-License-Identifier: MIT
 """Build features from book snapshot: mid, spread, depth, imbalance, sigma, staleness, 5m regime,
-   weighted imbalance, microprice, vwap, pressure, sigma_spike_z, cost_ticks."""
+weighted imbalance, microprice, vwap, pressure, sigma_spike_z, cost_ticks."""
 
 from __future__ import annotations
 
@@ -18,15 +18,21 @@ def _weighted_imbalance(
     eps: float = 1e-9,
 ) -> float:
     """I^(w)_t = (B^w - A^w) / (B^w + A^w + eps), w_i = exp(-lambda*(i-1))."""
-    Bw = sum(math.exp(-lambda_decay * (i - 1)) * q for i, (_, q) in enumerate(top_n_bids, 1))
-    Aw = sum(math.exp(-lambda_decay * (i - 1)) * q for i, (_, q) in enumerate(top_n_asks, 1))
+    Bw = sum(
+        math.exp(-lambda_decay * (i - 1)) * q for i, (_, q) in enumerate(top_n_bids, 1)
+    )
+    Aw = sum(
+        math.exp(-lambda_decay * (i - 1)) * q for i, (_, q) in enumerate(top_n_asks, 1)
+    )
     total = Bw + Aw
     if total < eps:
         return 0.0
     return (Bw - Aw) / total
 
 
-def _microprice(p_b: float, p_a: float, B1: float, A1: float, eps: float = 1e-9) -> float:
+def _microprice(
+    p_b: float, p_a: float, B1: float, A1: float, eps: float = 1e-9
+) -> float:
     """mu_t = (p_a*B1 + p_b*A1) / (A1+B1+eps)."""
     denom = A1 + B1 + eps
     return (p_a * B1 + p_b * A1) / denom
@@ -67,7 +73,10 @@ def _sigma_spike_z(
     # Rolling sigma over short window for last step
     sigma_short = float(np.std(rets[-short_steps:]))
     # Sigma over full long window for distribution
-    sigma_long_vals = [float(np.std(rets[i : i + short_steps])) for i in range(len(rets) - short_steps + 1)]
+    sigma_long_vals = [
+        float(np.std(rets[i : i + short_steps]))
+        for i in range(len(rets) - short_steps + 1)
+    ]
     if not sigma_long_vals:
         return 0.0
     mu_l = float(np.mean(sigma_long_vals))
@@ -136,7 +145,7 @@ def build_features(
     buffer_ticks: float = 0.5,
 ) -> dict[str, Any]:
     """Mid, spread, depth, imbalance (simple + weighted), sigma, staleness, 5m regime,
-       microprice, vwap, pressure, sigma_spike_z, cost_ticks."""
+    microprice, vwap, pressure, sigma_spike_z, cost_ticks."""
     # Single-level fallback when top_n not provided
     bids_levels = top_n_bids if top_n_bids else [(bid, bid_depth)]
     asks_levels = top_n_asks if top_n_asks else [(ask, ask_depth)]
@@ -181,7 +190,9 @@ def build_features(
         sigma = 0.0
 
     # Vol spike z (short vs long window)
-    sigma_spike_z = _sigma_spike_z(mid_history, sigma_short_steps, sigma_long_steps, eps)
+    sigma_spike_z = _sigma_spike_z(
+        mid_history, sigma_short_steps, sigma_long_steps, eps
+    )
 
     cost_ticks = fee_ticks + slippage_ticks + buffer_ticks
     staleness_ms = now_ms - last_event_ts_ms
@@ -211,7 +222,11 @@ def build_features(
     }
 
     # 5m rolling regime aggregates (for regime filter)
-    if spread_history is not None and depth_history is not None and staleness_history is not None:
+    if (
+        spread_history is not None
+        and depth_history is not None
+        and staleness_history is not None
+    ):
         agg = _rolling_5m_aggregates(
             mid_history,
             spread_history,

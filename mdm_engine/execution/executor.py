@@ -18,8 +18,17 @@ def execute(
     mid: float | None = None,
 ) -> dict[str, Any]:
     """Execute final action: ACT -> submit bid/ask; EXIT -> cancel then close; CANCEL -> cancel all."""
-    result: dict[str, Any] = {"action": final_action.action.value, "orders": [], "cancels": 0}
-    if final_action.action == Action.ACT and getattr(final_action, "bid_quote", None) is not None and getattr(final_action, "ask_quote", None) is not None and getattr(final_action, "size_usd", None):
+    result: dict[str, Any] = {
+        "action": final_action.action.value,
+        "orders": [],
+        "cancels": 0,
+    }
+    if (
+        final_action.action == Action.ACT
+        and getattr(final_action, "bid_quote", None) is not None
+        and getattr(final_action, "ask_quote", None) is not None
+        and getattr(final_action, "size_usd", None)
+    ):
         broker.submit_order(
             market_id,
             "bid",

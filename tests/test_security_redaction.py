@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: MIT
 """Redaction: no secrets in output."""
 
-import pytest
 from mdm_engine.security.redaction import redact_dict
 
 

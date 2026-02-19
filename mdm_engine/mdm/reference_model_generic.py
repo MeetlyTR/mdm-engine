@@ -35,7 +35,7 @@ def compute_proposal_reference(
     Returns:
         Proposal with action, confidence, reasons
     """
-    s0 = features.get("signal_0", 0.5)
+    _s0 = features.get("signal_0", 0.5)  # reserved for future use
     s1 = features.get("signal_1", 0.0)
     scale_a = features.get("state_scalar_a", 0.0)
     scale_b = features.get("state_scalar_b", 0.0)
@@ -44,7 +44,7 @@ def compute_proposal_reference(
     signal_score = abs(s1)
     width_penalty = min(1.0, max(0.0, 1.0 - (scale_b or 0) / 1000.0))
 
-    raw_score = (scale_score * 0.4 + signal_score * 0.4 + width_penalty * 0.2)
+    raw_score = scale_score * 0.4 + signal_score * 0.4 + width_penalty * 0.2
     confidence = 1.0 / (1.0 + math.exp(-5.0 * (raw_score - 0.5)))
 
     reasons = []
@@ -60,26 +60,41 @@ def compute_proposal_reference(
             action=Action.ACT,
             confidence=confidence,
             reasons=reasons,
-            params={"score_components": {"scale_score": scale_score, "signal_score": signal_score}},
+            params={
+                "score_components": {
+                    "scale_score": scale_score,
+                    "signal_score": signal_score,
+                }
+            },
             features_summary={"scale_score": scale_score, "signal_score": signal_score},
         )
-    return Proposal(action=Action.HOLD, confidence=confidence, reasons=reasons or ["low_confidence"])
+    return Proposal(
+        action=Action.HOLD, confidence=confidence, reasons=reasons or ["low_confidence"]
+    )
 
 
-def compute_proposal_private(features: dict[str, Any], **kwargs: Any) -> Proposal | None:
+def compute_proposal_private(
+    features: dict[str, Any], **kwargs: Any
+) -> Proposal | None:
     """
     Private model hook: import from mdm_engine.mdm._private.model if exists.
 
     Returns None if not available. On exception: fail-closed (safe HOLD).
     """
     try:
-        from mdm_engine.mdm._private.model import compute_proposal_private as _private_compute
+        from mdm_engine.mdm._private.model import (
+            compute_proposal_private as _private_compute,
+        )
+
         return _private_compute(features, **kwargs)
     except ImportError:
         return None
     except Exception as e:
         import logging
-        logging.getLogger(__name__).warning("Private MDM hook error, using reference: %s", type(e).__name__)
+
+        logging.getLogger(__name__).warning(
+            "Private MDM hook error, using reference: %s", type(e).__name__
+        )
         return Proposal(
             action=Action.HOLD,
             confidence=0.0,

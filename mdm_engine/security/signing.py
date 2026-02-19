@@ -4,14 +4,15 @@
 """SigningProvider interface and stub; timestamp/nonce, replay protection."""
 
 from abc import ABC, abstractmethod
-from typing import Any
 
 
 class SigningProvider(ABC):
     """Sign requests for live API; replay protection via timestamp/nonce."""
 
     @abstractmethod
-    def sign(self, method: str, path: str, body: bytes, timestamp: int, nonce: str) -> str:
+    def sign(
+        self, method: str, path: str, body: bytes, timestamp: int, nonce: str
+    ) -> str:
         """Return signature string."""
         ...
 
@@ -29,7 +30,9 @@ def canonicalize_request(method: str, path: str, body: bytes) -> bytes:
 class SigningStub(SigningProvider):
     """No real keys; always reject signing / replay check."""
 
-    def sign(self, method: str, path: str, body: bytes, timestamp: int, nonce: str) -> str:
+    def sign(
+        self, method: str, path: str, body: bytes, timestamp: int, nonce: str
+    ) -> str:
         return ""
 
     def reject_replay(self, timestamp: int, nonce: str, window_sec: int = 60) -> bool:

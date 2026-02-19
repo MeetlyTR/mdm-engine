@@ -16,7 +16,9 @@ from mdm_engine.sim.microstructure_sim import MicrostructureSim, BookSnapshot
 class PaperState:
     cash: float = 0.0
     positions: dict[str, float] = field(default_factory=dict)
-    cost_basis: dict[str, float] = field(default_factory=dict)  # cost paid for current position
+    cost_basis: dict[str, float] = field(
+        default_factory=dict
+    )  # cost paid for current position
     equity_curve: list[float] = field(default_factory=list)
     realized_pnl: float = 0.0
     fill_events: list[dict] = field(default_factory=list)
@@ -37,7 +39,9 @@ class PaperBroker(Broker):
         self._state = PaperState(cash=initial_cash)
         self._sim = sim or MicrostructureSim()
         self._book: dict[str, Any] = {}
-        self._fill_records: list[dict[str, Any]] = []  # persistent for adverse_selection (fill_ts_ms, fill_mid, side, qty)
+        self._fill_records: list[
+            dict[str, Any]
+        ] = []  # persistent for adverse_selection (fill_ts_ms, fill_mid, side, qty)
 
     def set_book(self, book: dict[str, Any]) -> None:
         """Update current book snapshot for fill simulation."""
@@ -46,7 +50,9 @@ class PaperBroker(Broker):
     def get_state(self) -> dict[str, Any]:
         state = self._state
         positions = dict(state.positions)
-        exposure = sum(abs(v) * (self._book.get("mid") or 0.5) for v in positions.values())
+        exposure = sum(
+            abs(v) * (self._book.get("mid") or 0.5) for v in positions.values()
+        )
         return {
             "cash": state.cash,
             "positions": positions,
@@ -77,7 +83,11 @@ class PaperBroker(Broker):
             ts_ms=self._book.get("ts_ms", 0),
         )
         filled, fill_price = self._sim.try_fill(
-            side, price, size_usd, book, post_only,
+            side,
+            price,
+            size_usd,
+            book,
+            post_only,
             imbalance=self._book.get("imbalance", 0.0),
             depth=book.bid_depth + book.ask_depth,
         )
@@ -93,21 +103,29 @@ class PaperBroker(Broker):
             if prev_pos == 0.0 and prev_pos + size != 0.0:
                 self._state.position_open_count += 1
             ts_ms = self._book.get("ts_ms", 0)
-            fill_mid = (self._book.get("bid", 0.0) + self._book.get("ask", 0.0)) / 2.0 if self._book.get("bid") is not None else fill_price
-            self._state.fill_events.append({
-                "market_id": market_id,
-                "side": side,
-                "price": fill_price,
-                "size_usd": size_usd,
-                "size": size,
-            })
-            self._fill_records.append({
-                "fill_ts_ms": ts_ms,
-                "fill_mid": fill_mid,
-                "side": side,
-                "qty": size_usd,
-                "market_id": market_id,
-            })
+            fill_mid = (
+                (self._book.get("bid", 0.0) + self._book.get("ask", 0.0)) / 2.0
+                if self._book.get("bid") is not None
+                else fill_price
+            )
+            self._state.fill_events.append(
+                {
+                    "market_id": market_id,
+                    "side": side,
+                    "price": fill_price,
+                    "size_usd": size_usd,
+                    "size": size,
+                }
+            )
+            self._fill_records.append(
+                {
+                    "fill_ts_ms": ts_ms,
+                    "fill_mid": fill_mid,
+                    "side": side,
+                    "qty": size_usd,
+                    "market_id": market_id,
+                }
+            )
         return {"order_id": f"paper-{market_id}-{side}", "filled": filled}
 
     def flatten_position(self, market_id: str, mid: float | None = None) -> float:
