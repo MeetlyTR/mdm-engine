@@ -63,6 +63,9 @@ jobs:
       - name: Install package
         run: pip install -e ".[dev]"
 
+      - name: INV-BUILD-1 (package build)
+        run: python -m build
+
       - name: Run tests
         run: pytest tests/ -v --json-report --json-report-file=pytest-report.json --cov=. --cov-report=term-missing --no-cov-on-fail
 
